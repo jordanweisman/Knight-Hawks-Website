@@ -72,6 +72,16 @@ db.serialize(() => {
         )
     `);
 
+    // Users Table
+    db.run(`
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            callsign TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            registered_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
     // Seed initial data if empty
     db.get('SELECT COUNT(*) as count FROM timeline_events', (err, row) => {
         if (err) return;
@@ -269,6 +279,42 @@ app.post('/api/artifacts', (req, res) => {
 app.delete('/api/artifacts/:id', (req, res) => {
     const { id } = req.params;
     db.run('DELETE FROM custom_artifacts WHERE id = ?', [id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// ===== USERS API ENDPOINTS =====
+app.get('/api/users', (req, res) => {
+    db.all('SELECT id, callsign, email, registered_at FROM users ORDER BY registered_at DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/users', (req, res) => {
+    const { callsign, email } = req.body;
+    if (!callsign || !email) {
+        return res.status(400).json({ error: 'Callsign and email are required' });
+    }
+    db.run(
+        'INSERT INTO users (callsign, email) VALUES (?, ?)',
+        [callsign, email],
+        function (err) {
+            if (err) {
+                if (err.message.includes('UNIQUE')) {
+                    return res.status(409).json({ error: 'Email already registered' });
+                }
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ id: this.lastID, callsign, email, registered_at: new Date().toISOString() });
+        }
+    );
+});
+
+app.delete('/api/users/:id', (req, res) => {
+    const { id } = req.params;
+    db.run('DELETE FROM users WHERE id = ?', [id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
     });
