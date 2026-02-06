@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knight Hawks | The Lost Archives</title>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Limelight&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --midnight: #0F1319;
+            --gold: #D4AF37;
+            --gold-dim: #8a7020;
+            --cream: #F5F5DC;
+            --paper: #f0e6d2;
+            --red: #8B0000;
+        }
+
+        body {
+            background-color: var(--midnight);
+            color: var(--cream);
+            font-family: 'Courier Prime', monospace;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.03) 0%, transparent 60%),
+                linear-gradient(0deg, rgba(0,0,0,0.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.2) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            overflow-x: hidden;
+        }
+
+        .font-deco { font-family: 'Limelight', cursive; }
+        .font-body { font-family: 'Courier Prime', monospace; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+
+        /* Art Deco Border Utilities */
+        .deco-border {
+            border: 3px double var(--gold);
+            position: relative;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+        }
+
+        .corner-accent {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--gold);
+            transition: all 0.3s ease;
+        }
+        
+        .deco-border:hover .corner-accent {
+            width: 24px;
+            height: 24px;
+            box-shadow: 0 0 10px var(--gold);
+        }
+
+        .tl { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .tr { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+        .bl { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+        .br { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+        .sunburst-text {
+            background: linear-gradient(to bottom, #fff 0%, #D4AF37 40%, #8a7020 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Decoder Animation */
+        .dial-transition {
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--midnight); }
+        ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+        
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Icons ---
+        const Icons = {
+            Scroll: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><path d="M22 17v1c0 .5-.5 1-1 1H3c-.5 0-1-.5-1-1v-1"/></svg>,
+            BookOpen: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+            Radio: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></svg>,
+            Lock: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+            Mail: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>,
+            Feather: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>,
+            Shield: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+            Puzzle: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19.439 15.424a1 1 0 0 0-1.438-1.439l-5.656 5.656a1 1 0 0 0 1.439 1.439l5.655-5.656z"/><path d="M8.5 4a2 2 0 0 1 2 2v2.5a.5.5 0 0 0 .5.5H13.5a2 2 0 0 1 2 2v1"/><path d="M13.5 16.5a2 2 0 0 1-2 2H9a.5.5 0 0 0-.5.5V21.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V16.5a2 2 0 0 1 2-2h1"/><path d="M11 2h2a2 2 0 0 1 2 2v2.5a.5.5 0 0 0 .5.5H18a2 2 0 0 1 2 2v2"/></svg>,
+            Folder: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>,
+            ZoomIn: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>,
+            ZoomOut: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>,
+            PlusFolder: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><line x1="12" y1="10" x2="12" y2="16"/><line x1="9" y1="13" x2="15" y2="13"/></svg>,
+            Clock: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            Users: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+            Images: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>,
+            Film: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="2.18" ry="2.18"/><line x1="7" x2="7" y1="2" y2="22"/><line x1="17" x2="17" y1="2" y2="22"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="2" x2="7" y1="7" y2="7"/><line x1="2" x2="7" y1="17" y2="17"/><line x1="17" x2="22" y1="17" y2="17"/><line x1="17" x2="22" y1="7" y2="7"/></svg>
+        };
+
+        // --- Shared Components ---
+        const DecoBox = ({ children, className = "" }) => (
+            <div className={`deco-border bg-opacity-90 bg-[#151a24] p-6 ${className}`}>
+                <div className="corner-accent tl"></div>
+                <div className="corner-accent tr"></div>
+                <div className="corner-accent bl"></div>
+                <div className="corner-accent br"></div>
+                {children}
+            </div>
+        );
+
+        const SectionTitle = ({ title, subtitle }) => (
+            <div className="text-center mb-8 relative">
+                <div className="absolute top-1/2 left-0 w-1/4 h-px bg-gradient-to-r from-transparent to-[#D4AF37]"></div>
+                <div className="absolute top-1/2 right-0 w-1/4 h-px bg-gradient-to-l from-transparent to-[#D4AF37]"></div>
+                <h2 className="font-deco text-4xl text-[#D4AF37] uppercase tracking-widest sunburst-text">{title}</h2>
+                {subtitle && <p className="font-serif italic text-[#F5F5DC] opacity-70 mt-2">{subtitle}</p>}
+            </div>
+        );
+
+        // --- Initial Data ---
+        const INITIAL_TIMELINE_EVENTS = [
+            { year: 1930, title: "The Bishop Knight Chess Association", desc: "The original Knight Hawks squadron is formed and starts doing missions around the world, fighting warlords, mad scientists, occultists and other ancient evils, and even dinosaurs." },
+            { year: 1931, title: "Japan invades Manchuria", desc: "Establishes the puppet state of Manchukuo in 1932." },
+            { year: 1933, title: "Hitler comes to power", desc: "The BK Chess Association starts scaling, anticipating war. The Knight Hawks start being more active in Europe and Germany in specific." },
+            { year: 1933, title: "Ace Drummond Comic premiers", desc: "Clayton Knight & Eddie Rickenbacker start the Ace Drummond comic which features occasional appearances of the Knight Hawks." },
+            { year: 1934, title: "Knight Hawks comic strip introduced", desc: "The news stories of their global missions and their popularity in Ace Drummond leads to the Knight Hawks getting its daily and Sunday comic strip." },
+            { year: 1934, title: "Missions in China", desc: "Dragoness (Katherine Sui Fun Cheung) starts leading Knight Hawk missions in China." },
+            { year: 1936, title: "Spanish Civil War starts", desc: "Field Marshal Wolfram von Richthofen takes command of the Nazi Condor Legion. The Knight Hawks shift to combat footing and relocate to Spain to fight the Condor Legion." },
+            { year: 1936, title: "The Knight Hawk comic books start", desc: "The Knight Hawks first comic book premiers with the lead story Knight Hawks VS The Condor Legion." },
+            { year: 1937, title: "Permanent Presence in China", desc: "Claire Lee Chennault brings in the Knight Hawks who establish a permanent base commanded by The Dragoness." },
+            { year: 1938, title: "Germany absorbs Austria", desc: "Tensions rise across Europe." },
+            { year: 1938, title: "Cliff Secord joins the Knight Hawks", desc: "Introduced by Howard Hughes, a long time supporter of the Knight Hawks. The Rocketeer flies again." },
+            { year: 1938, title: "Airboy Comic books spins out", desc: "A spin-off series featuring the younger recruits." },
+            { year: 1939, title: "WWII Begins", desc: "Germany invades Poland. The world is at war." },
+            { year: 1940, title: "Flyin Jenny Comic strip", desc: "Another spin-off featuring the daring female aviators of the squadron." },
+            { year: 1941, title: "Flying Tiger combat missions begin", desc: "The American Volunteer Group (AVG) enters the fray." },
+            { year: 1942, title: "The United States enters the war", desc: "After Pearl Harbor, the Knight Hawks are integrated into Allied special operations." },
+        ];
+
+        const INITIAL_MEMBERS = [
+            { id: 1, name: "Katherine 'The Dragoness' Cheung", bio: "A pioneering aviatrix and the first Chinese-American woman to earn a pilot license. Known for her daring maneuvers and leadership in the China theater.", image: "Gemini_Generated_Image_f0ep3uf0ep3uf0ep.jpg", gallery: [] },
+            { id: 2, name: "Cliff 'Rocketeer' Secord", bio: "A stunt pilot turned hero after discovering a prototype jetpack. Introduced to the squadron by Howard Hughes, he brings aerial superiority where planes cannot reach.", image: "Screenshot 2025-11-23 at 2.14.26 PM.jpg", gallery: [] },
+            { id: 3, name: "General 'Iron' Richter", bio: "A tactical genius and WWI veteran who commands the squadron's European operations. Known for his stoic demeanor and unshakeable will.", image: "Gemini_Generated_Image_4i0m2s4i0m2s4i0m.jpg", gallery: [] },
+             { id: 4, name: "The Huntress", bio: "A mysterious operative specializing in stealth and infiltration. Her true identity is classified.", image: "Gemini_Generated_Image_d9ojsrd9ojsrd9oj.jpg", gallery: [] }
+        ];
+
+        const INITIAL_COMICS = [
+            { id: 1, featured: true, title: "The Silver Aviator", pubDate: "1934-10-01", description: "The first appearance of the Silver Aviator.", foundBy: "Jordan Weisman", thumbnail: "Gemini_Generated_Image_d9ojsrd9ojsrd9oj.jpg", mediaType: 'comic_front', mediaContent: { front: "Gemini_Generated_Image_d9ojsrd9ojsrd9oj.jpg" } },
+            { id: 2, featured: false, title: "Skies over Shanghai", pubDate: "1934-11-01", description: "The Dragoness takes flight over Shanghai.", foundBy: "Michael Stackpole", thumbnail: "Gemini_Generated_Image_f0ep3uf0ep3uf0ep.jpg", mediaType: 'comic_front', mediaContent: { front: "Gemini_Generated_Image_f0ep3uf0ep3uf0ep.jpg" } },
+            { id: 3, featured: true, title: "Radio: The Shadow's Warning", pubDate: "1935-02-15", description: "A rare radio serial recording featuring a guest appearance by the Knight Hawks.", foundBy: "Dave McCoy", thumbnail: "Black Swan of Death with Jimmy the monkey.jpg", mediaType: 'radio', mediaContent: { link: "#" } }
+        ];
+
+        // --- Puzzle / Restoration Logic ---
+
+        const DEFAULT_ARTIFACTS = [];
+
+        const FOLDER_COLORS = ['#8B0000', '#2E8B57', '#4682B4', '#D2691E', '#800080', '#A0522D', '#556B2F', '#483D8B'];
+
+        // Helper to generate a random ragged polygon clip-path
+        const generateRaggedPoly = () => {
+            const t1 = 30 + (Math.random() * 10 - 5);
+            const t2 = 70 + (Math.random() * 10 - 5);
+            const r1 = 30 + (Math.random() * 10 - 5);
+            const r2 = 70 + (Math.random() * 10 - 5);
+            const b1 = 70 + (Math.random() * 10 - 5);
+            const b2 = 30 + (Math.random() * 10 - 5);
+            const l1 = 70 + (Math.random() * 10 - 5);
+            const l2 = 30 + (Math.random() * 10 - 5);
+            
+            return `polygon(
+                0% 0%, 
+                ${t1}% ${Math.random()*5}%, ${t2}% ${Math.random()*5}%, 100% 0%, 
+                100% ${r1}%, ${95+Math.random()*5}% ${r2}%, 100% 100%, 
+                ${b1}% ${95+Math.random()*5}%, ${b2}% 100%, 0% 100%, 
+                ${Math.random()*5}% ${l1}%, 0% ${l2}%
+            )`;
+        };
+        
+        // Helper to generate pieces for specific artifacts
+        const generatePiecesFor = (artifactsList) => {
+             const newPieces = [];
+             artifactsList.forEach(artifact => {
+                 // Determine bins from the same list
+                 const availableBins = artifactsList.length > 0 ? artifactsList : [{id: 'temp'}]; // Fallback if empty
+
+                 for (let y = 0; y < artifact.rows; y++) {
+                     for (let x = 0; x < artifact.cols; x++) {
+                         // Randomly assign piece to a bin from the available artifacts
+                         let randomBinId = availableBins[Math.floor(Math.random() * availableBins.length)].id;
+                         
+                         newPieces.push({
+                             id: `${artifact.id}_${x}_${y}`,
+                             trueArtifactId: artifact.id,
+                             currentArtifactId: randomBinId,
+                             gridX: x,
+                             gridY: y,
+                             totalCols: artifact.cols, 
+                             totalRows: artifact.rows,
+                             width: artifact.pieceWidth,   
+                             height: artifact.pieceHeight,
+                             x: 50 + Math.random() * 200,
+                             y: 50 + Math.random() * 200,
+                             rotation: Math.floor(Math.random() * 4) * 90,
+                             isOnCanvas: false,
+                             clipPath: generateRaggedPoly(),
+                             imgSrc: artifact.src
+                         });
+                     }
+                 }
+             });
+             return newPieces;
+        };
+
+        // --- VIEWS ---
+
+        const HomeView = () => (
+            <div className="animate-fade-in space-y-8">
+                <DecoBox className="max-w-3xl mx-auto text-center py-12">
+                    <h1 className="font-deco text-5xl md:text-7xl mb-4 sunburst-text">Knight Hawks</h1>
+                    <p className="font-deco text-xl tracking-[0.2em] text-[#D4AF37] mb-8">The Lost Archives</p>
+                    <p className="text-lg leading-relaxed text-[#F5F5DC] font-serif max-w-2xl mx-auto">
+                        In the dust of a forgotten Queens storage unit, legends were reborn. 
+                        Jordan Weisman, Michael Stackpole, and Dave McCoy uncovered a trove of 
+                        illustration boards and manuscripts dated 1934—the lost history of the 
+                        Knight Hawks. We are digitizing these artifacts as we find them. 
+                        The ink is fresh. The danger is real.
+                    </p>
+                </DecoBox>
+
+                <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                    <DecoBox>
+                        <h3 className="font-deco text-2xl text-[#D4AF37] mb-4">Latest Discovery</h3>
+                        <div className="aspect-video bg-black border border-[#D4AF37] flex items-center justify-center opacity-80 mb-4">
+                            <span className="text-[#D4AF37] opacity-50 font-deco">Storage Unit 404 Video Feed</span>
+                        </div>
+                        <p className="text-sm opacity-80">
+                            Footage from the initial opening of the locker. Note the pristine condition of the pulp magazines found in the rear crate.
+                        </p>
+                    </DecoBox>
+                    <DecoBox>
+                        <h3 className="font-deco text-2xl text-[#D4AF37] mb-4">The Meta-Story</h3>
+                        <p className="leading-relaxed mb-4">
+                            This isn't just a comic. It's a window into a 1930s that never was. 
+                            The "Shadow Cabal" mentioned in Stackpole's notes seems to reference real-world events 
+                            obscured by history. Join us as we piece together the truth.
+                        </p>
+                        <button className="w-full py-3 bg-[#D4AF37] text-black font-deco uppercase hover:bg-[#fff] transition-colors mt-4">
+                            Read The Manifesto
+                        </button>
+                    </DecoBox>
+                </div>
+            </div>
+        );
+
+        const MembersView = ({ members }) => {
+            const [hoveredGalleryImage, setHoveredGalleryImage] = useState(null);
+
+            return (
+                <div className="animate-fade-in max-w-6xl mx-auto relative">
+                    <SectionTitle title="Squadron Roster" subtitle="Known Squadron Members" />
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                        {members.map(member => (
+                            <div key={member.id} className="group relative">
+                                {/* Card Container */}
+                                <DecoBox className="h-full flex flex-col items-center text-center p-4 transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl hover:border-[#D4AF37]">
+                                    {/* Image Frame */}
+                                    <div className="w-full aspect-[3/4] mb-4 relative overflow-hidden border-2 border-[#D4AF37]">
+                                        <img 
+                                            src={member.image} 
+                                            alt={member.name}
+                                            className="w-full h-full object-cover filter sepia-[.3] contrast-110 group-hover:sepia-0 transition-all duration-500"
+                                            onError={(e) => { e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%23D4AF37" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'; e.target.className="w-full h-full object-contain p-8 opacity-20"; }} 
+                                        />
+                                        
+                                        {/* HOVER OVERLAY (Dossier) */}
+                                        <div className="absolute inset-0 bg-[#151a24] bg-opacity-95 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col p-6 overflow-y-auto custom-scrollbar">
+                                            <h4 className="font-deco text-lg text-[#D4AF37] mb-2 border-b border-[#D4AF37] pb-1">PERSONNEL FILE</h4>
+                                            <p className="font-mono text-xs text-[#F5F5DC] leading-relaxed mb-4 text-left flex-grow">
+                                                {member.bio}
+                                            </p>
+                                            
+                                            {/* Additional Images Gallery */}
+                                            {member.gallery && member.gallery.length > 0 && (
+                                                <div className="mt-auto pt-4 border-t border-[#D4AF37] border-opacity-30">
+                                                    <p className="text-[0.6rem] text-[#D4AF37] uppercase mb-2 text-left">Attached Evidence:</p>
+                                                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                                                        {member.gallery.map((img, idx) => (
+                                                            <img 
+                                                                key={idx} 
+                                                                src={img} 
+                                                                className="w-12 h-12 object-cover border border-[#D4AF37] cursor-pointer transition-transform"
+                                                                onMouseEnter={() => setHoveredGalleryImage(img)}
+                                                                onMouseLeave={() => setHoveredGalleryImage(null)}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <h3 className="font-deco text-xl text-[#F5F5DC]">{member.name}</h3>
+                                </DecoBox>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Full-size image overlay */}
+                    {hoveredGalleryImage && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none bg-black bg-opacity-50 backdrop-blur-sm">
+                            <div className="relative border-4 double border-[#D4AF37] bg-[#0F1319] shadow-2xl pointer-events-none p-2">
+                                <img 
+                                    src={hoveredGalleryImage} 
+                                    className="max-w-[90vw] max-h-[80vh] object-contain"
+                                    alt="Gallery preview"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const TimelineView = ({ events }) => {
+            const scrollRef = useRef(null);
+            const [scrollSpeed, setScrollSpeed] = useState(0);
+
+            // Sort events by year
+            const sortedEvents = [...events].sort((a, b) => a.year - b.year);
+            const minYear = sortedEvents.length > 0 ? sortedEvents[0].year : '1930';
+            const maxYear = sortedEvents.length > 0 ? sortedEvents[sortedEvents.length - 1].year : '1942';
+
+            // --- Edge Scrolling Logic ---
+            useEffect(() => {
+                const handleMouseMove = (e) => {
+                    const w = window.innerWidth;
+                    const x = e.clientX;
+                    const threshold = 200; // px from edge to trigger scroll
+                    const maxSpeed = 15;   // max scroll speed
+
+                    if (x < threshold) {
+                        // Scroll Left
+                        const intensity = (threshold - x) / threshold;
+                        setScrollSpeed(-maxSpeed * intensity);
+                    } else if (x > w - threshold) {
+                        // Scroll Right
+                        const intensity = (x - (w - threshold)) / threshold;
+                        setScrollSpeed(maxSpeed * intensity);
+                    } else {
+                        setScrollSpeed(0);
+                    }
+                };
+
+                window.addEventListener('mousemove', handleMouseMove);
+                return () => window.removeEventListener('mousemove', handleMouseMove);
+            }, []);
+
+            // Animation Loop for Smooth Scrolling
+            useEffect(() => {
+                let animationFrameId;
+
+                const animate = () => {
+                    if (scrollSpeed !== 0 && scrollRef.current) {
+                        scrollRef.current.scrollLeft += scrollSpeed;
+                    }
+                    animationFrameId = requestAnimationFrame(animate);
+                };
+
+                animate();
+                return () => cancelAnimationFrame(animationFrameId);
+            }, [scrollSpeed]);
+
+            return (
+                <div className="h-full flex flex-col overflow-hidden relative">
+                    <div className="text-center mb-4 flex-shrink-0 z-20 relative bg-[#0F1319] bg-opacity-80 py-4 backdrop-blur-sm border-b border-[#D4AF37] border-opacity-30">
+                        <SectionTitle title="Chronology" subtitle={`Timeline of Events ${minYear} - ${maxYear}`} />
+                    </div>
+                    
+                    <div 
+                        ref={scrollRef}
+                        className="flex-grow overflow-x-auto overflow-y-hidden relative flex items-center px-20 custom-scrollbar hide-scrollbar"
+                        style={{ scrollBehavior: 'auto' }}
+                    >
+                        {/* Container for Line AND Items (Ensures line stretches) */}
+                        <div className="flex relative z-10 py-10 min-w-full w-max">
+                            
+                            {/* Center Axis Line */}
+                            <div className="absolute left-0 right-0 top-1/2 h-1 bg-[#D4AF37] shadow-[0_0_10px_#D4AF37] z-0 transform -translate-y-1/2"></div>
+
+                            {sortedEvents.map((event, idx) => (
+                                <div key={idx} className="relative w-96 h-[500px] flex-shrink-0 mx-6 group">
+                                    
+                                    {/* Node on Axis */}
+                                    <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#0F1319] border-4 border-[#D4AF37] z-20 shadow-lg group-hover:scale-150 transition-transform duration-300 cursor-pointer">
+                                        <div className="absolute inset-0 rounded-full bg-[#D4AF37] opacity-0 group-hover:opacity-100 animate-ping"></div>
+                                    </div>
+
+                                    {/* Content Card - Alternating Top/Bottom */}
+                                    <div className={`absolute left-0 right-0 flex justify-center 
+                                        ${idx % 2 === 0 ? 'bottom-1/2 pb-12' : 'top-1/2 pt-12'}`}
+                                    >
+                                        <div className={`w-full transform transition-all duration-300 group-hover:scale-105 group-hover:z-30`}>
+                                            <DecoBox className="bg-[#151a24] bg-opacity-95 relative border shadow-xl">
+                                                
+                                                {/* Connector Line */}
+                                                <div className={`absolute left-1/2 transform -translate-x-1/2 w-0.5 bg-[#D4AF37] h-12 opacity-50
+                                                    ${idx % 2 === 0 ? '-bottom-12' : '-top-12'}`}
+                                                ></div>
+
+                                                {/* Date Badge (Background) */}
+                                                <span className="font-deco text-5xl text-[#D4AF37] opacity-10 absolute -top-4 right-2 pointer-events-none">{event.year}</span>
+                                                
+                                                <h3 className="font-deco text-lg text-[#F5F5DC] mb-1 relative z-10 leading-tight">{event.title}</h3>
+                                                
+                                                {/* Date Display */}
+                                                <p className="font-serif text-2xl text-[#D4AF37] font-bold mb-2">{event.year}</p>
+                                                
+                                                {/* Hidden Details (Reveal on Hover) */}
+                                                <div className="max-h-0 overflow-hidden group-hover:max-h-60 transition-all duration-500 ease-in-out">
+                                                    <div className="w-full h-px bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-50 my-2"></div>
+                                                    <p className="font-mono text-xs leading-relaxed opacity-90 text-[#F5F5DC]">
+                                                        {event.desc}
+                                                    </p>
+                                                </div>
+                                            </DecoBox>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            
+                            {/* End Cap */}
+                            <div className="w-40 flex-shrink-0 flex items-center justify-center relative h-[500px]">
+                                <div className="w-4 h-4 bg-[#D4AF37] rotate-45 animate-pulse"></div>
+                                <div className="absolute top-1/2 w-full h-px bg-gradient-to-r from-[#D4AF37] to-transparent"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
+                        <div className="inline-block px-4 py-1 bg-black bg-opacity-50 border border-[#D4AF37] border-opacity-30 rounded text-[#D4AF37] text-[0.6rem] font-mono animate-pulse">
+                            &lt;&lt; MOVE MOUSE TO EDGES TO PAN TIMELINE &gt;&gt;
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ComicsAndSerialsView = ({ comics }) => {
+            const [viewingItem, setViewingItem] = useState(null);
+            const featured = comics.filter(c => c.featured);
+            const others = comics.filter(c => !c.featured).sort((a, b) => new Date(a.pubDate) - new Date(b.pubDate));
+
+            const getYoutubeId = (url) => {
+                if (!url) return null;
+                const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+                const match = url.match(regExp);
+                return (match && match[7].length === 11) ? match[7] : null;
+            };
+
+            // --- Internal Image Viewer Component for Zoom/Pan ---
+            const ImageViewer = ({ src, label }) => {
+                const [scale, setScale] = useState(1);
+                const [position, setPosition] = useState({ x: 0, y: 0 });
+                const [isDragging, setIsDragging] = useState(false);
+                const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+                const handleZoom = (delta) => {
+                    setScale(prev => Math.min(Math.max(prev + delta, 1), 5)); // Max 5x zoom
+                };
+
+                const handleMouseDown = (e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+                };
+
+                const handleMouseMove = (e) => {
+                    if (!isDragging) return;
+                    setPosition({
+                        x: e.clientX - dragStart.x,
+                        y: e.clientY - dragStart.y
+                    });
+                };
+
+                const handleMouseUp = () => setIsDragging(false);
+
+                return (
+                    <div className="relative w-full h-[70vh] bg-[#050505] border border-[#333] overflow-hidden group/viewer">
+                        {/* Controls */}
+                        <div className="absolute top-2 right-2 z-20 flex gap-1 bg-black/80 backdrop-blur p-1 rounded border border-[#D4AF37]/50 opacity-0 group-hover/viewer:opacity-100 transition-opacity">
+                            <button onClick={() => handleZoom(-0.5)} className="p-1 text-[#D4AF37] hover:text-white hover:bg-[#333] rounded"><Icons.ZoomOut size={16}/></button>
+                            <button onClick={() => {setScale(1); setPosition({x:0,y:0})}} className="px-2 text-[0.6rem] font-mono text-[#D4AF37] border-l border-r border-[#D4AF37]/30 hover:text-white">RESET</button>
+                            <button onClick={() => handleZoom(0.5)} className="p-1 text-[#D4AF37] hover:text-white hover:bg-[#333] rounded"><Icons.ZoomIn size={16}/></button>
+                        </div>
+
+                        {/* Label */}
+                        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
+                            <span className="bg-black/80 text-[#F5F5DC] text-[0.6rem] px-3 py-1 font-mono border border-[#D4AF37]/30 uppercase tracking-widest">{label}</span>
+                        </div>
+
+                        {/* Image Area */}
+                        <div 
+                            className={`w-full h-full flex items-center justify-center ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
+                        >
+                            <img 
+                                src={src} 
+                                className="max-w-full max-h-full object-contain transition-transform duration-100 ease-linear select-none"
+                                style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})` }}
+                                draggable="false"
+                            />
+                        </div>
+                    </div>
+                );
+            };
+
+            const MediaCard = ({ item }) => (
+                 <div className="group bg-[#0a0d11] border border-[#D4AF37] p-4 relative overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+                    {/* Media Rendering */}
+                    <div className="aspect-[3/4] mb-4 relative bg-[#000] flex items-center justify-center overflow-hidden">
+                        {/* CHANGED: Check if thumbnail exists for ANY type, otherwise check if it's a comic */}
+                        {(item.thumbnail || item.mediaType.includes('comic') || item.mediaType.includes('sunday')) ? (
+                            <img 
+                                // Priority: Manual Thumbnail -> Comic Front Cover
+                                src={item.thumbnail || item.mediaContent?.front} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    // If image fails, hide it so the background icon might show (or just show placeholder SVG)
+                                    e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%23D4AF37" stroke-width="1"><rect width="18" height="22" x="3" y="1" rx="2" ry="2"/><path d="M3 21h18M3 6h18M8 6v15"/></svg>';
+                                }} 
+                            />
+                        ) : item.mediaType === 'radio' ? (
+                             <div className="text-[#D4AF37] flex flex-col items-center">
+                                <Icons.Radio size={48} />
+                                <span className="font-deco mt-2">AUDIO SERIAL</span>
+                             </div>
+                        ) : (
+                             <div className="text-[#D4AF37] flex flex-col items-center">
+                                <Icons.Film size={48} />
+                                <span className="font-deco mt-2">MOTION PICTURE</span>
+                             </div>
+                        )}
+                        
+                        <div className="absolute top-2 right-2 bg-black bg-opacity-70 px-2 py-1 text-[0.6rem] text-[#D4AF37] border border-[#D4AF37]">
+                            {item.mediaType.replace('_', ' ').toUpperCase()}
+                        </div>
+                    </div>
+
+                    <h3 className="font-deco text-lg text-[#F5F5DC] mb-1 truncate">{item.title}</h3>
+                    <div className="flex justify-between text-xs font-mono text-[#D4AF37] opacity-70 mb-2">
+                        <span>{item.pubDate}</span>
+                        <span>Found by: {item.foundBy}</span>
+                    </div>
+                    <p className="text-xs text-[#F5F5DC] opacity-60 line-clamp-3 font-serif">
+                        {item.description}
+                    </p>
+
+                    {/* Interaction Overlay */}
+                    <div className="absolute inset-0 bg-black bg-opacity-90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-6 text-center">
+                        <h4 className="font-deco text-xl text-[#D4AF37] mb-4">{item.title}</h4>
+                        <button 
+                            onClick={() => setViewingItem(item)}
+                            className="border border-[#D4AF37] text-[#D4AF37] px-6 py-2 hover:bg-[#D4AF37] hover:text-black transition-colors font-deco mb-2 cursor-pointer"
+                        >
+                            VIEW ARCHIVE
+                        </button>
+                        {item.mediaType.includes('full') && <span className="text-[0.6rem] text-[#F5F5DC]">INCLUDES REVERSE SCAN</span>}
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="animate-fade-in max-w-7xl mx-auto space-y-12 relative">
+                    {/* Featured Section */}
+                    <section>
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="h-px flex-grow bg-gradient-to-r from-transparent to-[#D4AF37]"></div>
+                            <h2 className="font-deco text-3xl text-[#D4AF37] tracking-widest uppercase">Newest Finds</h2>
+                            <div className="h-px flex-grow bg-gradient-to-l from-transparent to-[#D4AF37]"></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {featured.map(item => <MediaCard key={item.id} item={item} />)}
+                            {featured.length === 0 && <p className="col-span-3 text-center text-[#F5F5DC] opacity-50 font-mono italic">No recent discoveries to report.</p>}
+                        </div>
+                    </section>
+
+                    {/* Main Archive */}
+                    <section>
+                         <div className="flex items-center gap-4 mb-6">
+                            <div className="h-px flex-grow bg-gradient-to-r from-transparent to-[#D4AF37]"></div>
+                            <h2 className="font-deco text-3xl text-[#D4AF37] tracking-widest uppercase">Complete Archive</h2>
+                            <div className="h-px flex-grow bg-gradient-to-l from-transparent to-[#D4AF37]"></div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {others.map(item => <MediaCard key={item.id} item={item} />)}
+                        </div>
+                    </section>
+
+                    {/* --- MEDIA VIEWER MODAL --- */}
+                    {viewingItem && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-90 backdrop-blur-md">
+                            <div className="relative w-full max-w-6xl max-h-[95vh] flex flex-col">
+                                
+                                {/* Header / Close Bar */}
+                                <div className="flex justify-between items-center bg-[#0F1319] border border-[#D4AF37] p-4 mb-1">
+                                    <div>
+                                        <h3 className="font-deco text-xl text-[#F5F5DC]">{viewingItem.title}</h3>
+                                        <p className="text-xs text-[#D4AF37] font-mono">ARCHIVE ID: {viewingItem.id} // TYPE: {viewingItem.mediaType.toUpperCase()}</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setViewingItem(null)}
+                                        className="text-[#D4AF37] hover:text-white font-bold text-xl px-4"
+                                    >
+                                        ✕ CLOSE
+                                    </button>
+                                </div>
+
+                                {/* Content Container */}
+                                <div className="flex-grow flex items-center justify-center overflow-auto custom-scrollbar border border-[#D4AF37] border-opacity-30 bg-[#0a0d11] p-4">
+                                    
+                                    {/* TYPE: COMIC / IMAGES */}
+                                    {(viewingItem.mediaType.includes('comic') || viewingItem.mediaType.includes('sunday')) && (
+                                        <div className="flex flex-col md:flex-row gap-4 items-center justify-center w-full h-full">
+                                            <div className="flex-1 w-full h-full min-h-[500px]">
+                                                <ImageViewer src={viewingItem.mediaContent.front} label="FRONT SCAN" />
+                                            </div>
+                                            {viewingItem.mediaType.includes('full') && viewingItem.mediaContent.back && (
+                                                <div className="flex-1 w-full h-full min-h-[500px]">
+                                                    <ImageViewer src={viewingItem.mediaContent.back} label="REVERSE SCAN" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* TYPE: MOVIE (YouTube) */}
+                                    {viewingItem.mediaType === 'movie' && (
+                                        <div className="w-full max-w-4xl aspect-video border-8 border-[#1a1f2b] shadow-2xl relative bg-black">
+                                            {getYoutubeId(viewingItem.mediaContent.link) ? (
+                                                <iframe 
+                                                    width="100%" 
+                                                    height="100%" 
+                                                    src={`https://www.youtube.com/embed/${getYoutubeId(viewingItem.mediaContent.link)}`} 
+                                                    title="YouTube video player" 
+                                                    frameBorder="0" 
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                                    allowFullScreen
+                                                ></iframe>
+                                            ) : (
+                                                <div className="flex items-center justify-center h-full text-[#8B0000] font-mono">INVALID SIGNAL SOURCE</div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* TYPE: RADIO */}
+                                    {viewingItem.mediaType === 'radio' && (
+                                        <div className="flex flex-col items-center">
+                                            {/* Graphic Radio */}
+                                            <div className="w-80 h-96 bg-[#1a1f2b] border-4 double border-[#D4AF37] rounded-t-full relative shadow-2xl flex flex-col items-center p-6">
+                                                {/* Speaker Grille */}
+                                                <div className="w-48 h-48 rounded-full border-2 border-[#8a7020] bg-[#000] relative mb-6 grid grid-cols-6 gap-1 overflow-hidden">
+                                                     {[...Array(20)].map((_,i) => <div key={i} className="bg-[#2a2f3b] w-full h-full"></div>)}
+                                                </div>
+                                                {/* Dial */}
+                                                <div className="w-64 h-12 bg-[#f0e6d2] border border-[#000] mb-6 relative flex items-center px-2 overflow-hidden">
+                                                    <div className="w-full h-px bg-black absolute top-1/2"></div>
+                                                    {[...Array(10)].map((_,i) => <div key={i} className="h-2 w-px bg-black mx-auto"></div>)}
+                                                    <div className="absolute top-0 bottom-0 w-1 bg-red-600 left-1/3 opacity-80"></div>
+                                                </div>
+                                                {/* Knobs */}
+                                                <div className="flex justify-between w-full px-8">
+                                                    <div className="w-12 h-12 rounded-full bg-[#111] border-2 border-[#555] shadow-lg"></div>
+                                                    <div className="w-12 h-12 rounded-full bg-[#111] border-2 border-[#555] shadow-lg"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Audio Control */}
+                                            <div className="mt-8 w-full max-w-md bg-[#0F1319] p-4 border border-[#D4AF37]">
+                                                <p className="text-[#D4AF37] text-xs font-mono mb-2 text-center">BROADCAST FREQUENCY LOCKED</p>
+                                                <audio controls src={viewingItem.mediaContent.link} className="w-full invert filter grayscale" />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const ArticlesView = () => (
+            <div className="animate-fade-in max-w-4xl mx-auto">
+                <SectionTitle title="Memoirs & Dispatches" subtitle="Prose materials and discovered letters" />
+                <div className="space-y-6">
+                    {[
+                        { title: "The Shanghai Incident", date: "Oct 12, 1933", type: "Field Report" },
+                        { title: "Blueprint Analysis: The Hawk's Wing", date: "Nov 04, 1933", type: "Technical" },
+                        { title: "Letter from the Editor", date: "Jan 1934", type: "Meta" }
+                    ].map((article, idx) => (
+                        <div key={idx} className="bg-[#f0e6d2] text-[#0F1319] p-6 border-l-4 border-[#8B0000] shadow-lg relative transform transition-all hover:scale-[1.01]">
+                            <div className="flex justify-between items-start mb-2 border-b border-[#0F1319] pb-2">
+                                <h3 className="font-serif text-2xl font-bold">{article.title}</h3>
+                                <span className="font-mono text-sm uppercase tracking-wider bg-[#0F1319] text-[#D4AF37] px-2 py-1">
+                                    {article.type}
+                                </span>
+                            </div>
+                            <p className="font-mono text-sm mb-4">Date Recovered: {article.date}</p>
+                            <p className="font-serif leading-relaxed opacity-90">
+                                (Excerpt) The fog was thick over the harbor. Too thick. Weisman knew that the shadows moved 
+                                independently of the light sources. It was an unnatural darkness...
+                            </p>
+                            <button className="mt-4 text-[#8B0000] font-bold uppercase text-sm flex items-center gap-2 hover:underline">
+                                Read Full Document <Icons.Feather size={14} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+
+        const JoinView = ({ onRegister }) => {
+            const [status, setStatus] = useState('idle'); // idle, sending, sent, confirmed
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                setStatus('sending');
+                // Simulate backend delay
+                setTimeout(() => {
+                    setStatus('sent');
+                }, 1500);
+            };
+
+            const handleConfirm = () => {
+                setStatus('confirmed');
+                onRegister(); // Unlock app state
+            };
+
+            return (
+                <div className="animate-fade-in max-w-2xl mx-auto">
+                    <SectionTitle title="Enlistment Office" subtitle="Join the Squadron" />
+                    
+                    <DecoBox>
+                        {status === 'idle' && (
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <p className="text-center font-serif mb-6">
+                                    Register to receive classified updates, access the Discord comms channel, 
+                                    and obtain clearance for the Secret Decoder.
+                                </p>
+                                <div>
+                                    <label className="block text-[#D4AF37] font-deco mb-2">Callsign / Name</label>
+                                    <input required type="text" className="w-full bg-[#0F1319] border border-[#D4AF37] p-3 text-[#F5F5DC] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" placeholder="e.g. Ace" />
+                                </div>
+                                <div>
+                                    <label className="block text-[#D4AF37] font-deco mb-2">Telegraph Address (Email)</label>
+                                    <input required type="email" className="w-full bg-[#0F1319] border border-[#D4AF37] p-3 text-[#F5F5DC] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" placeholder="pilot@hangar.com" />
+                                </div>
+                                <button type="submit" className="w-full bg-[#D4AF37] text-black font-deco text-xl py-4 hover:bg-[#F5F5DC] transition-colors border-2 border-transparent hover:border-[#D4AF37]">
+                                    Transmit Credentials
+                                </button>
+                            </form>
+                        )}
+
+                        {status === 'sending' && (
+                            <div className="text-center py-12">
+                                <div className="animate-spin w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full mx-auto mb-4"></div>
+                                <p className="font-mono text-[#D4AF37]">CONTACTING TELEGRAPH OPERATOR...</p>
+                            </div>
+                        )}
+
+                        {status === 'sent' && (
+                            <div className="text-center py-8 space-y-4">
+                                <Icons.Mail size={48} className="mx-auto text-[#D4AF37]" />
+                                <h3 className="font-deco text-2xl text-[#F5F5DC]">Orders Dispatched</h3>
+                                <p className="font-serif text-sm">
+                                    A confirmation packet has been sent to your inbox. 
+                                    You must open it to finalize your clearance.
+                                </p>
+                                <div className="bg-[#1a1f2b] p-4 mt-6 border border-dashed border-gray-600">
+                                    <p className="text-xs text-gray-400 mb-2">[DEMO MODE: Click below to simulate clicking the email link]</p>
+                                    <button onClick={handleConfirm} className="text-[#D4AF37] underline hover:text-white font-mono">
+                                        [CLICK TO CONFIRM REGISTRATION]
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {status === 'confirmed' && (
+                            <div className="text-center py-8 space-y-4 animate-fade-in">
+                                <div className="inline-block p-3 border-2 border-[#D4AF37] rounded-full mb-4">
+                                    <Icons.Radio size={32} className="text-[#D4AF37]" />
+                                </div>
+                                <h3 className="font-deco text-2xl text-[#D4AF37]">Welcome to the Squadron</h3>
+                                <p className="font-serif">Your clearance is verified. The Decoder is now active.</p>
+                                <div className="flex flex-col gap-3 mt-6">
+                                    <button className="bg-[#5865F2] text-white font-bold py-3 px-6 rounded hover:bg-opacity-80 transition-colors">
+                                        Join Discord Server
+                                    </button>
+                                    <p className="text-xs opacity-50">Secure Communications Channel</p>
+                                </div>
+                            </div>
+                        )}
+                    </DecoBox>
+                </div>
+            );
+        };
+
+        const DecoderView = ({ isRegistered }) => {
+            const [rotation1, setRotation1] = useState(0);
+            const [rotation2, setRotation2] = useState(0);
+            const [input, setInput] = useState("");
+            const [output, setOutput] = useState("");
+            const [activeWheel, setActiveWheel] = useState(null); // null, 1, or 2
+            
+            const containerRef = useRef(null);
+            const lastAngle = useRef(0);
+
+            const shift1 = Math.round(((rotation1 % 360) + 360) % 360 / (360 / 26)) % 26;
+            const shift2 = Math.round(((rotation2 % 360) + 360) % 360 / (360 / 26)) % 26;
+
+            // Dual-Rotor Decode Logic
+            useEffect(() => {
+                const result = input.split('').map((char, index) => {
+                    if (char.match(/[a-z]/i)) {
+                        const code = char.charCodeAt(0);
+                        const isUpper = code >= 65 && code <= 90;
+                        const base = isUpper ? 65 : 97;
+                        
+                        // DETERMINE WHICH WHEEL TO USE
+                        // Wheel 1 (Outer) for letters 1, 3, 5 (index 0, 2, 4)
+                        // Wheel 2 (Inner) for letters 2, 4, 6 (index 1, 3, 5)
+                        const activeShift = (index % 2 === 0) ? shift1 : shift2;
+
+                        let newCode = ((code - base - activeShift) % 26);
+                        if (newCode < 0) newCode += 26;
+                        return String.fromCharCode(newCode + base);
+                    }
+                    return char;
+                }).join('');
+                setOutput(result);
+            }, [input, shift1, shift2]);
+
+            // --- Drag Logic ---
+
+            const getAngle = (clientX, clientY) => {
+                if (!containerRef.current) return 0;
+                const rect = containerRef.current.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+            };
+
+            const handleMouseDown = (e, wheelId) => {
+                e.preventDefault(); 
+                e.stopPropagation(); 
+                setActiveWheel(wheelId);
+                lastAngle.current = getAngle(e.clientX, e.clientY);
+            };
+
+            // Global mouse listeners
+            useEffect(() => {
+                const handleMouseMove = (e) => {
+                    if (!activeWheel) return;
+                    
+                    const setRotation = activeWheel === 1 ? setRotation1 : setRotation2;
+                    const currentAngle = getAngle(e.clientX, e.clientY);
+                    let delta = currentAngle - lastAngle.current;
+
+                    // Fix angle wrapping
+                    if (delta > 180) delta -= 360;
+                    if (delta < -180) delta += 360;
+
+                    setRotation(prev => prev + delta);
+                    lastAngle.current = currentAngle;
+                };
+
+                const handleMouseUp = () => {
+                    if (activeWheel) {
+                        const setRotation = activeWheel === 1 ? setRotation1 : setRotation2;
+                        setActiveWheel(null);
+                        // Snap to nearest slot
+                        const step = 360 / 26;
+                        setRotation(prev => Math.round(prev / step) * step);
+                    }
+                };
+
+                if (activeWheel) {
+                    window.addEventListener('mousemove', handleMouseMove);
+                    window.addEventListener('mouseup', handleMouseUp);
+                }
+
+                return () => {
+                    window.removeEventListener('mousemove', handleMouseMove);
+                    window.removeEventListener('mouseup', handleMouseUp);
+                };
+            }, [activeWheel]);
+
+            if (!isRegistered) {
+                return (
+                    <div className="max-w-2xl mx-auto text-center py-20 animate-fade-in">
+                        <Icons.Lock size={64} className="mx-auto text-[#8B0000] mb-6" />
+                        <h2 className="font-deco text-4xl text-[#8B0000] mb-4">RESTRICTED ACCESS</h2>
+                        <p className="font-serif text-lg mb-8">
+                            This device is calibrated for registered agents only. 
+                            Please enlist to receive your cipher keys.
+                        </p>
+                        <button onClick={() => window.location.hash = 'join'} className="bg-[#D4AF37] text-black font-deco px-8 py-3">
+                            Go To Enlistment
+                        </button>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="animate-fade-in max-w-7xl mx-auto flex flex-col items-center">
+                    <SectionTitle title="Compound Decoder" subtitle="Use Outer Ring for odd letters, Inner Ring for even letters" />
+                    
+                    <div className="flex flex-col md:flex-row items-start gap-8 w-full justify-center px-4">
+                        {/* Left Column: Concentric Wheels */}
+                        <div className="flex flex-col items-center flex-shrink-0">
+                            <div className="relative w-[340px] h-[340px] lg:w-[400px] lg:h-[400px] select-none" ref={containerRef}>
+                                
+                                {/* Base Plate (Static) */}
+                                <div className="absolute inset-0 rounded-full border-4 border-[#D4AF37] opacity-20 z-0"></div>
+                                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-[#8B0000] animate-bounce z-40">
+                                    <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[20px] border-t-[#8B0000]"></div>
+                                </div>
+
+                                {/* --- OUTER ROTOR (WHEEL 1) --- */}
+                                <div 
+                                    onMouseDown={(e) => handleMouseDown(e, 1)}
+                                    className={`absolute inset-0 rounded-full border-[16px] border-[#1a1f2b] bg-[#D4AF37] shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing z-10 ${activeWheel === 1 ? '' : 'dial-transition'}`}
+                                    style={{ transform: `rotate(${rotation1}deg)` }}
+                                >
+                                    <div className="absolute inset-1 rounded-full border border-black opacity-20"></div>
+                                    <div className="absolute inset-[15%] rounded-full border border-black opacity-20"></div>
+                                    
+                                    {/* Label indicating Drag Area */}
+                                    <div className="absolute top-4 text-[0.6rem] font-bold text-black opacity-30 tracking-widest pointer-events-none" 
+                                         style={{ left: '50%', transform: 'translateX(-50%)' }}>
+                                        OUTER RING
+                                    </div>
+
+                                    {/* Letters for Outer Ring - FIXED POSITIONING */}
+                                    {[...Array(26)].map((_, i) => {
+                                        const angle = (i * 360) / 26;
+                                        return (
+                                            <div key={i} className="absolute font-mono font-bold text-black text-base md:text-lg"
+                                                 style={{ 
+                                                     left: '50%',
+                                                     top: '50%',
+                                                     transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-160px)`, 
+                                                 }}>
+                                                {String.fromCharCode(65 + i)}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* --- INNER ROTOR (WHEEL 2) --- */}
+                                {/* IMPORTANT: Positioned as SIBLING to Outer Rotor, not child, but visually overlaid using inset */}
+                                <div 
+                                    onMouseDown={(e) => handleMouseDown(e, 2)}
+                                    className={`absolute inset-[22%] rounded-full bg-[#1a1f2b] border-[4px] border-[#D4AF37] flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.5)] cursor-grab active:cursor-grabbing z-20 ${activeWheel === 2 ? '' : 'dial-transition'}`}
+                                    style={{ transform: `rotate(${rotation2}deg)` }}
+                                >
+                                    <div className="absolute inset-0 rounded-full border border-[#D4AF37] opacity-30 m-1"></div>
+                                    
+                                    {/* Label indicating Drag Area */}
+                                    <div className="absolute top-6 text-[0.5rem] font-bold text-[#D4AF37] opacity-50 tracking-widest pointer-events-none"
+                                         style={{ left: '50%', transform: 'translateX(-50%)' }}>
+                                        INNER
+                                    </div>
+
+                                    {/* Letters for Inner Ring - FIXED POSITIONING */}
+                                     {[...Array(26)].map((_, i) => {
+                                        const angle = (i * 360) / 26;
+                                        return (
+                                            <div key={i} className="absolute font-mono font-bold text-[#D4AF37] text-sm"
+                                                 style={{ 
+                                                     left: '50%',
+                                                     top: '50%',
+                                                     transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-85px)`, 
+                                                 }}>
+                                                {String.fromCharCode(65 + i)}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* --- CENTER KNOB (Display) --- */}
+                                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#8a7020] shadow-lg flex flex-col items-center justify-center border-4 border-[#fff] z-30 pointer-events-none">
+                                    <div className="flex items-center gap-2 text-black font-deco text-xl font-bold">
+                                        <span>{String(shift1).padStart(2, '0')}</span>
+                                        <span className="opacity-50 text-sm">|</span>
+                                        <span>{String(shift2).padStart(2, '0')}</span>
+                                    </div>
+                                    <div className="text-[0.5rem] font-bold uppercase tracking-wider mt-1 text-black opacity-60">
+                                        Key Settings
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            {/* Operational Briefing */}
+                            <div className="mt-8 max-w-[340px] lg:max-w-[400px] bg-[#1a1f2b] p-4 text-xs text-[#D4AF37] font-mono border border-[#D4AF37] opacity-70">
+                                <p className="mb-1 font-bold">OPERATIONAL BRIEFING:</p>
+                                <ul className="list-disc pl-4 space-y-1 opacity-80">
+                                    <li><span className="text-white">Outer Ring (Gold)</span> decodes 1st, 3rd, 5th letters.</li>
+                                    <li><span className="text-white">Inner Ring (Dark)</span> decodes 2nd, 4th, 6th letters.</li>
+                                    <li>Drag rings to align keys with the top red marker.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Right Column: Input/Output */}
+                        <div className="flex-grow w-full max-w-xl lg:sticky lg:top-32">
+                            <DecoBox className="w-full">
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="block text-[#D4AF37] font-deco mb-2 text-sm tracking-wider">
+                                            Encrypted Signal
+                                        </label>
+                                        <textarea 
+                                            value={input}
+                                            onChange={(e) => setInput(e.target.value.toUpperCase())}
+                                            placeholder="INPUT CIPHER TEXT..."
+                                            className="w-full bg-[#0F1319] border border-[#D4AF37] p-4 font-mono text-lg text-[#F5F5DC] h-32 focus:outline-none shadow-inner"
+                                        />
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-center gap-4 opacity-80">
+                                        <div className="h-px bg-[#D4AF37] w-12"></div>
+                                        <Icons.Lock size={16} className="text-[#8B0000]" />
+                                        <span className="text-[#8B0000] font-bold text-sm tracking-widest">DECRYPTING</span>
+                                        <div className="h-px bg-[#D4AF37] w-12"></div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[#D4AF37] font-deco mb-2 text-sm tracking-wider">
+                                            Plaintext Result
+                                        </label>
+                                        <div className="w-full bg-[#f0e6d2] text-[#0F1319] p-6 font-mono text-lg min-h-[8rem] border-l-4 border-[#8B0000] shadow-lg relative">
+                                            <div className="absolute top-0 right-0 p-2 opacity-20 pointer-events-none">
+                                                <Icons.Feather size={40} />
+                                            </div>
+                                            {output || <span className="opacity-30 italic">Waiting for signal...</span>}
+                                        </div>
+                                    </div>
+                                </div>
+                            </DecoBox>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AdminView = ({ addTimelineEvent, addMember, customArtifacts, setCustomArtifacts, addComicEntry }) => {
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [password, setPassword] = useState("");
+            const [error, setError] = useState(false);
+            
+            // Timeline Form State
+            const [eventYear, setEventYear] = useState("");
+            const [eventTitle, setEventTitle] = useState("");
+            const [eventDesc, setEventDesc] = useState("");
+            
+            // Member Form State
+            const [memberName, setMemberName] = useState("");
+            const [memberBio, setMemberBio] = useState("");
+            const [primaryFile, setPrimaryFile] = useState(null);
+            const [galleryFiles, setGalleryFiles] = useState([]);
+            
+            // Comics Form State
+            const [comicFeatured, setComicFeatured] = useState(false);
+            const [comicTitle, setComicTitle] = useState("");
+            const [comicPubDate, setComicPubDate] = useState("");
+            const [comicDesc, setComicDesc] = useState("");
+            const [comicFoundBy, setComicFoundBy] = useState("");
+            const [comicThumbnail, setComicThumbnail] = useState(null);
+            const [mediaType, setMediaType] = useState('comic_front');
+            const [mediaFront, setMediaFront] = useState(null);
+            const [mediaBack, setMediaBack] = useState(null);
+            const [mediaLink, setMediaLink] = useState("");
+
+            // Artifact Import State
+            const fileInputRef = useRef(null);
+
+            const [msg, setMsg] = useState("");
+
+            // --- Encoder State ---
+            const [rotation1, setRotation1] = useState(0);
+            const [rotation2, setRotation2] = useState(0);
+            const [input, setInput] = useState("");
+            const [output, setOutput] = useState("");
+            const [activeWheel, setActiveWheel] = useState(null); 
+            
+            const containerRef = useRef(null);
+            const lastAngle = useRef(0);
+
+            const shift1 = Math.round(((rotation1 % 360) + 360) % 360 / (360 / 26)) % 26;
+            const shift2 = Math.round(((rotation2 % 360) + 360) % 360 / (360 / 26)) % 26;
+
+            // --- Logic: ENCRYPTION (Reverse of Decoder) ---
+            useEffect(() => {
+                const result = input.split('').map((char, index) => {
+                    if (char.match(/[a-z]/i)) {
+                        const code = char.charCodeAt(0);
+                        const isUpper = code >= 65 && code <= 90;
+                        const base = isUpper ? 65 : 97;
+                        
+                        // Select Shift
+                        const activeShift = (index % 2 === 0) ? shift1 : shift2;
+
+                        // ENCRYPTION LOGIC: ADD SHIFT
+                        let newCode = ((code - base + activeShift) % 26);
+                        return String.fromCharCode(newCode + base);
+                    }
+                    return char;
+                }).join('');
+                setOutput(result);
+            }, [input, shift1, shift2]);
+
+            // --- Drag Logic (Same as Decoder) ---
+            const getAngle = (clientX, clientY) => {
+                if (!containerRef.current) return 0;
+                const rect = containerRef.current.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+            };
+
+            const handleMouseDown = (e, wheelId) => {
+                e.preventDefault(); e.stopPropagation(); 
+                setActiveWheel(wheelId);
+                lastAngle.current = getAngle(e.clientX, e.clientY);
+            };
+
+            useEffect(() => {
+                const handleMouseMove = (e) => {
+                    if (!activeWheel) return;
+                    const setRotation = activeWheel === 1 ? setRotation1 : setRotation2;
+                    const currentAngle = getAngle(e.clientX, e.clientY);
+                    let delta = currentAngle - lastAngle.current;
+                    if (delta > 180) delta -= 360;
+                    if (delta < -180) delta += 360;
+                    setRotation(prev => prev + delta);
+                    lastAngle.current = currentAngle;
+                };
+                const handleMouseUp = () => {
+                    if (activeWheel) {
+                        const setRotation = activeWheel === 1 ? setRotation1 : setRotation2;
+                        setActiveWheel(null);
+                        const step = 360 / 26;
+                        setRotation(prev => Math.round(prev / step) * step);
+                    }
+                };
+                if (activeWheel) {
+                    window.addEventListener('mousemove', handleMouseMove);
+                    window.addEventListener('mouseup', handleMouseUp);
+                }
+                return () => {
+                    window.removeEventListener('mousemove', handleMouseMove);
+                    window.removeEventListener('mouseup', handleMouseUp);
+                };
+            }, [activeWheel]);
+
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if (password === "Clayton") {
+                    setIsAuthenticated(true);
+                    setError(false);
+                } else {
+                    setError(true);
+                }
+            };
+            
+            const handleAddEvent = (e) => {
+                e.preventDefault();
+                if (eventYear && eventTitle && eventDesc) {
+                    addTimelineEvent({
+                        year: parseInt(eventYear),
+                        title: eventTitle,
+                        desc: eventDesc
+                    });
+                    setEventYear("");
+                    setEventTitle("");
+                    setEventDesc("");
+                    setMsg("Event added to timeline successfully.");
+                    setTimeout(() => setMsg(""), 3000);
+                }
+            };
+
+            const handleAddMember = (e) => {
+                e.preventDefault();
+                if (memberName && memberBio && primaryFile) {
+                    const primaryUrl = URL.createObjectURL(primaryFile);
+                    const galleryUrls = galleryFiles.map(f => URL.createObjectURL(f));
+                    
+                    addMember({
+                        id: Date.now(),
+                        name: memberName,
+                        bio: memberBio,
+                        image: primaryUrl,
+                        gallery: galleryUrls
+                    });
+                    
+                    setMemberName("");
+                    setMemberBio("");
+                    setPrimaryFile(null);
+                    setGalleryFiles([]);
+                    
+                    setMsg("New member added to roster.");
+                    setTimeout(() => setMsg(""), 3000);
+                }
+            };
+
+             const handleAddComic = (e) => {
+                e.preventDefault();
+                if (comicTitle && comicPubDate) {
+                    let mediaContent = {};
+                    if (mediaType.includes('comic') || mediaType.includes('sunday')) {
+                        if (mediaFront) mediaContent.front = URL.createObjectURL(mediaFront);
+                        if (mediaBack) mediaContent.back = URL.createObjectURL(mediaBack);
+                    } else {
+                        mediaContent.link = mediaLink;
+                    }
+
+                    addComicEntry({
+                        id: Date.now(),
+                        featured: comicFeatured,
+                        title: comicTitle,
+                        pubDate: comicPubDate,
+                        description: comicDesc,
+                        foundBy: comicFoundBy,
+                        thumbnail: comicThumbnail ? URL.createObjectURL(comicThumbnail) : null,
+                        mediaType,
+                        mediaContent
+                    });
+                    
+                    // Reset Form
+                    setComicFeatured(false);
+                    setComicTitle("");
+                    setComicPubDate("");
+                    setComicDesc("");
+                    setComicFoundBy("");
+                    setComicThumbnail(null);
+                    setMediaFront(null);
+                    setMediaBack(null);
+                    setMediaLink("");
+                    
+                    setMsg("Entry added to Comics & Serials.");
+                    setTimeout(() => setMsg(""), 3000);
+                }
+            };
+            
+            // --- File Import Logic (Moved from Restoration) ---
+            const handleImportClick = () => {
+                fileInputRef.current.click();
+            };
+
+            const handleFileSelect = (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+
+                const newArtifacts = files.map((file, index) => {
+                    const url = URL.createObjectURL(file);
+                    return {
+                        id: `custom_${Date.now()}_${index}`,
+                        title: file.name.split('.')[0],
+                        src: url,
+                        cols: 3,
+                        rows: 4,
+                        pieceWidth: 100,
+                        pieceHeight: 130,
+                        folderColor: FOLDER_COLORS[Math.floor(Math.random() * FOLDER_COLORS.length)]
+                    };
+                });
+
+                setCustomArtifacts(prev => {
+                    const updated = [...prev, ...newArtifacts];
+                    setMsg(`${newArtifacts.length} artifact(s) imported to Restoration Lab.`);
+                    setTimeout(() => setMsg(""), 3000);
+                    return updated;
+                });
+            };
+
+            if (!isAuthenticated) {
+                return (
+                    <div className="max-w-md mx-auto py-20 animate-fade-in">
+                        <DecoBox>
+                            <div className="text-center mb-6">
+                                <Icons.Shield size={48} className="mx-auto text-[#8B0000] mb-4" />
+                                <h2 className="font-deco text-2xl text-[#8B0000]">ADMINISTRATIVE ACCESS</h2>
+                                <p className="font-serif text-sm opacity-70 mt-2">Classified Clearance Level 5 Only</p>
+                            </div>
+                            <form onSubmit={handleLogin} className="space-y-4">
+                                <div>
+                                    <input 
+                                        type="password" 
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="ENTER PASSPHRASE" 
+                                        className="w-full bg-[#0F1319] border border-[#D4AF37] p-3 text-center text-[#F5F5DC] focus:outline-none focus:ring-1 focus:ring-[#D4AF37] font-deco tracking-widest"
+                                    />
+                                </div>
+                                <button type="submit" className="w-full bg-[#D4AF37] text-black font-deco text-lg py-3 hover:bg-[#F5F5DC] transition-colors">
+                                    VERIFY IDENTITY
+                                </button>
+                                {error && <p className="text-center text-[#8B0000] font-bold text-sm blink">ACCESS DENIED: INVALID CREDENTIALS</p>}
+                            </form>
+                        </DecoBox>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="animate-fade-in max-w-7xl mx-auto flex flex-col items-center space-y-16 pb-20">
+                    
+                     {/* Comics Editor */}
+                    <div className="w-full max-w-4xl px-4">
+                        <SectionTitle title="Comics & Serials Editor" subtitle="Manage Archive Entries" />
+                        <DecoBox>
+                            <form onSubmit={handleAddComic} className="space-y-6">
+                                <div className="flex items-center gap-4 border-b border-[#D4AF37] border-opacity-30 pb-4">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={comicFeatured}
+                                            onChange={(e) => setComicFeatured(e.target.checked)}
+                                            className="form-checkbox text-[#D4AF37] bg-[#0F1319] border-[#D4AF37]"
+                                        />
+                                        <span className="text-[#D4AF37] font-deco text-sm">FEATURE THIS ENTRY (Newest Find)</span>
+                                    </label>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Entry Name</label>
+                                        <input type="text" required value={comicTitle} onChange={e => setComicTitle(e.target.value)} className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC]" placeholder="e.g. Silver Aviator #1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Publication Date</label>
+                                        <input type="date" required value={comicPubDate} onChange={e => setComicPubDate(e.target.value)} className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Artifact Found By</label>
+                                        <input type="text" value={comicFoundBy} onChange={e => setComicFoundBy(e.target.value)} className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Thumbnail Image</label>
+                                        <input type="file" accept="image/*" onChange={e => setComicThumbnail(e.target.files[0])} className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC] text-xs" />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Description</label>
+                                    <textarea value={comicDesc} onChange={e => setComicDesc(e.target.value)} className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC] h-24" placeholder="Entry details..." />
+                                </div>
+
+                                <div className="border-t border-[#D4AF37] border-opacity-30 pt-4">
+                                    <label className="block text-[#D4AF37] font-deco mb-2 text-sm">Media Type</label>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                                        {[
+                                            {id: 'comic_front', label: 'Comic Cover (Front)'},
+                                            {id: 'comic_full', label: 'Comic (Front & Back)'},
+                                            {id: 'sunday_front', label: 'Sunday Strip (Front)'},
+                                            {id: 'sunday_full', label: 'Sunday Strip (Front & Back)'},
+                                            {id: 'radio', label: 'Radio Serial'},
+                                            {id: 'movie', label: 'Movie Serial'}
+                                        ].map(type => (
+                                            <label key={type.id} className="flex items-center gap-2 cursor-pointer bg-[#0a0d11] p-2 border border-transparent hover:border-[#D4AF37]">
+                                                <input 
+                                                    type="radio" 
+                                                    name="mediaType" 
+                                                    value={type.id} 
+                                                    checked={mediaType === type.id}
+                                                    onChange={e => setMediaType(e.target.value)}
+                                                    className="text-[#D4AF37]"
+                                                />
+                                                <span className="text-xs text-[#F5F5DC]">{type.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+
+                                    {/* Dynamic Inputs based on Media Type */}
+                                    <div className="bg-[#0a0d11] p-4 border border-[#D4AF37] border-dashed">
+                                        {(mediaType.includes('comic') || mediaType.includes('sunday')) && (
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="block text-[#D4AF37] text-xs mb-1">Front Cover / Image</label>
+                                                    <input type="file" accept="image/*" onChange={e => setMediaFront(e.target.files[0])} className="w-full text-[#F5F5DC] text-xs" />
+                                                </div>
+                                                {mediaType.includes('full') && (
+                                                    <div>
+                                                        <label className="block text-[#D4AF37] text-xs mb-1">Back Cover / Reverse Side</label>
+                                                        <input type="file" accept="image/*" onChange={e => setMediaBack(e.target.files[0])} className="w-full text-[#F5F5DC] text-xs" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                        {(mediaType === 'radio' || mediaType === 'movie') && (
+                                            <div>
+                                                <label className="block text-[#D4AF37] text-xs mb-1">{mediaType === 'radio' ? 'Audio Source / Link' : 'YouTube Link'}</label>
+                                                <input type="text" value={mediaLink} onChange={e => setMediaLink(e.target.value)} className="w-full bg-[#151a24] border border-[#D4AF37] p-2 text-[#F5F5DC]" placeholder="https://..." />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <button type="submit" className="w-full bg-[#D2691E] text-black font-deco py-2 hover:bg-[#fff] transition-colors">
+                                    ADD TO ARCHIVE
+                                </button>
+                            </form>
+                        </DecoBox>
+                    </div>
+
+                    {/* Restoration Archives Manager */}
+                    <div className="w-full max-w-4xl px-4">
+                         <SectionTitle title="Restoration Archives" subtitle="Manage Evidence Files" />
+                         <DecoBox>
+                             <div className="flex justify-between items-center">
+                                 <div>
+                                     <h3 className="font-deco text-[#D4AF37] mb-1">Import New Evidence</h3>
+                                     <p className="text-xs text-[#F5F5DC] opacity-70 font-mono">Upload images to create new puzzles in the Restoration Lab.</p>
+                                 </div>
+                                 <div>
+                                    <button onClick={handleImportClick} className="bg-[#D4AF37] text-black font-deco px-6 py-2 hover:bg-[#F5F5DC] transition-colors flex items-center gap-2">
+                                        <Icons.PlusFolder size={18} /> SELECT FILES
+                                    </button>
+                                    <input 
+                                        type="file" 
+                                        ref={fileInputRef} 
+                                        onChange={handleFileSelect} 
+                                        multiple 
+                                        accept="image/*" 
+                                        className="hidden" 
+                                    />
+                                 </div>
+                             </div>
+                             {customArtifacts.length > 0 && (
+                                 <div className="mt-4 pt-4 border-t border-[#D4AF37] border-opacity-30">
+                                     <p className="text-xs text-[#D4AF37] mb-2">Active Case Files:</p>
+                                     <div className="flex flex-wrap gap-2">
+                                         {customArtifacts.map(art => (
+                                             <span key={art.id} className="text-[0.6rem] bg-[#0F1319] border border-[#D4AF37] px-2 py-1 text-[#F5F5DC] rounded">
+                                                 {art.title}
+                                             </span>
+                                         ))}
+                                     </div>
+                                 </div>
+                             )}
+                         </DecoBox>
+                    </div>
+
+                    {/* Member Editor */}
+                    <div className="w-full max-w-4xl px-4">
+                        <SectionTitle title="Squadron Roster Editor" subtitle="Manage Personnel Files" />
+                        <DecoBox>
+                            <form onSubmit={handleAddMember} className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Codename / Name</label>
+                                        <input 
+                                            type="text" 
+                                            value={memberName} 
+                                            onChange={(e) => setMemberName(e.target.value)} 
+                                            className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC]"
+                                            placeholder="e.g. The Rocketeer"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Primary Photo</label>
+                                        <input 
+                                            type="file" 
+                                            onChange={(e) => setPrimaryFile(e.target.files[0])} 
+                                            className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC] text-xs"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Biographical Data</label>
+                                    <textarea 
+                                        value={memberBio} 
+                                        onChange={(e) => setMemberBio(e.target.value)} 
+                                        className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC] h-24"
+                                        placeholder="Service history..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Additional Evidence (Gallery)</label>
+                                    <input 
+                                        type="file" 
+                                        multiple
+                                        onChange={(e) => setGalleryFiles(Array.from(e.target.files))} 
+                                        className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC] text-xs"
+                                    />
+                                </div>
+                                <button type="submit" className="w-full bg-[#4682B4] text-black font-deco py-2 hover:bg-[#fff] transition-colors">
+                                    ADD AGENT
+                                </button>
+                            </form>
+                        </DecoBox>
+                    </div>
+
+                    {/* Timeline Editor Section */}
+                    <div className="w-full max-w-4xl px-4">
+                        <SectionTitle title="Timeline Editor" subtitle="Update Historical Records" />
+                        <DecoBox>
+                            <form onSubmit={handleAddEvent} className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div className="md:col-span-1">
+                                        <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Year</label>
+                                        <input 
+                                            type="number" 
+                                            value={eventYear} 
+                                            onChange={(e) => setEventYear(e.target.value)} 
+                                            className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC]"
+                                            placeholder="19XX"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-3">
+                                        <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Event Title</label>
+                                        <input 
+                                            type="text" 
+                                            value={eventTitle} 
+                                            onChange={(e) => setEventTitle(e.target.value)} 
+                                            className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC]"
+                                            placeholder="e.g. The Great Discovery"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-[#D4AF37] font-deco mb-1 text-sm">Description / Dossier</label>
+                                    <textarea 
+                                        value={eventDesc} 
+                                        onChange={(e) => setEventDesc(e.target.value)} 
+                                        className="w-full bg-[#0F1319] border border-[#D4AF37] p-2 text-[#F5F5DC] h-24"
+                                        placeholder="Details..."
+                                    />
+                                </div>
+                                <button type="submit" className="w-full bg-[#2E8B57] text-black font-deco py-2 hover:bg-[#fff] transition-colors">
+                                    ADD TO TIMELINE
+                                </button>
+                                {msg && <p className="text-center text-green-500 text-sm mt-2">{msg}</p>}
+                            </form>
+                        </DecoBox>
+                    </div>
+
+                    {/* Encoder Section */}
+                    <div className="w-full">
+                        <SectionTitle title="Top Secret Encoder" subtitle="Generate Ciphers for Field Agents" />
+                        
+                        <div className="flex flex-col md:flex-row items-start gap-8 w-full justify-center px-4">
+                             {/* Left Column: Concentric Wheels (Visuals Only - Same logic) */}
+                             <div className="flex flex-col items-center flex-shrink-0">
+                                <div className="relative w-[340px] h-[340px] lg:w-[400px] lg:h-[400px] select-none" ref={containerRef}>
+                                    <div className="absolute inset-0 rounded-full border-4 border-[#D4AF37] opacity-20 z-0"></div>
+                                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-[#8B0000] animate-bounce z-40">
+                                        <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[20px] border-t-[#8B0000]"></div>
+                                    </div>
+                                    <div onMouseDown={(e) => handleMouseDown(e, 1)} className={`absolute inset-0 rounded-full border-[16px] border-[#1a1f2b] bg-[#D4AF37] shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing z-10 ${activeWheel === 1 ? '' : 'dial-transition'}`} style={{ transform: `rotate(${rotation1}deg)` }}>
+                                        <div className="absolute inset-1 rounded-full border border-black opacity-20"></div>
+                                        <div className="absolute inset-[15%] rounded-full border border-black opacity-20"></div>
+                                        <div className="absolute top-4 text-[0.6rem] font-bold text-black opacity-30 tracking-widest pointer-events-none" style={{ left: '50%', transform: 'translateX(-50%)' }}>OUTER RING</div>
+                                        {[...Array(26)].map((_, i) => {
+                                            const angle = (i * 360) / 26;
+                                            return (
+                                                <div key={i} className="absolute font-mono font-bold text-black text-base md:text-lg" style={{ left: '50%', top: '50%', transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-160px)` }}>
+                                                    {String.fromCharCode(65 + i)}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div onMouseDown={(e) => handleMouseDown(e, 2)} className={`absolute inset-[22%] rounded-full bg-[#1a1f2b] border-[4px] border-[#D4AF37] flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.5)] cursor-grab active:cursor-grabbing z-20 ${activeWheel === 2 ? '' : 'dial-transition'}`} style={{ transform: `rotate(${rotation2}deg)` }}>
+                                        <div className="absolute inset-0 rounded-full border border-[#D4AF37] opacity-30 m-1"></div>
+                                        <div className="absolute top-6 text-[0.5rem] font-bold text-[#D4AF37] opacity-50 tracking-widest pointer-events-none" style={{ left: '50%', transform: 'translateX(-50%)' }}>INNER</div>
+                                         {[...Array(26)].map((_, i) => {
+                                            const angle = (i * 360) / 26;
+                                            return (
+                                                <div key={i} className="absolute font-mono font-bold text-[#D4AF37] text-sm" style={{ left: '50%', top: '50%', transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-85px)` }}>
+                                                    {String.fromCharCode(65 + i)}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#8a7020] shadow-lg flex flex-col items-center justify-center border-4 border-[#fff] z-30 pointer-events-none">
+                                        <div className="flex items-center gap-2 text-black font-deco text-xl font-bold">
+                                            <span>{String(shift1).padStart(2, '0')}</span><span className="opacity-50 text-sm">|</span><span>{String(shift2).padStart(2, '0')}</span>
+                                        </div>
+                                        <div className="text-[0.5rem] font-bold uppercase tracking-wider mt-1 text-black opacity-60">Key Settings</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Column: Input/Output */}
+                            <div className="flex-grow w-full max-w-xl lg:sticky lg:top-32">
+                                <DecoBox className="w-full">
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="block text-[#D4AF37] font-deco mb-2 text-sm tracking-wider">
+                                                Clear Text (English)
+                                            </label>
+                                            <textarea 
+                                                value={input}
+                                                onChange={(e) => setInput(e.target.value.toUpperCase())}
+                                                placeholder="ENTER MESSAGE TO ENCRYPT..."
+                                                className="w-full bg-[#0F1319] border border-[#D4AF37] p-4 font-mono text-lg text-[#F5F5DC] h-32 focus:outline-none shadow-inner"
+                                            />
+                                        </div>
+                                        
+                                        <div className="flex items-center justify-center gap-4 opacity-80">
+                                            <div className="h-px bg-[#D4AF37] w-12"></div>
+                                            <Icons.Shield size={16} className="text-[#8B0000]" />
+                                            <span className="text-[#8B0000] font-bold text-sm tracking-widest">ENCRYPTING</span>
+                                            <div className="h-px bg-[#D4AF37] w-12"></div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-[#D4AF37] font-deco mb-2 text-sm tracking-wider">
+                                                Encrypted Signal
+                                            </label>
+                                            <div className="w-full bg-[#f0e6d2] text-[#0F1319] p-6 font-mono text-lg min-h-[8rem] border-l-4 border-[#8B0000] shadow-lg relative break-words">
+                                                <div className="absolute top-0 right-0 p-2 opacity-20 pointer-events-none">
+                                                    <Icons.Feather size={40} />
+                                                </div>
+                                                {output || <span className="opacity-30 italic">Generated cipher will appear here...</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </DecoBox>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const RestorationView = ({ isRegistered, customArtifacts, setCustomArtifacts }) => {
+            const [selectedArtifactId, setSelectedArtifactId] = useState(null);
+            const [pieces, setPieces] = useState([]);
+            const [zoom, setZoom] = useState(1);
+            const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
+            
+            // HTML5 Drag State (For Bin -> Canvas)
+            const [draggedPanelPiece, setDraggedPanelPiece] = useState(null);
+            
+            // Mouse Drag State (For Canvas Manipulation)
+            const [interactionState, setInteractionState] = useState({ 
+                type: 'IDLE',
+                startMouse: { x: 0, y: 0 },
+                initialPositions: {},
+                groupIds: [],
+                initialViewOffset: { x: 0, y: 0 }
+            });
+            
+            const [completedArtifacts, setCompletedArtifacts] = useState([]);
+            const canvasRef = useRef(null);
+            const SNAP_THRESHOLD = 30; 
+
+            // Combined Artifacts list
+            const allArtifacts = [...DEFAULT_ARTIFACTS, ...customArtifacts];
+
+            // --- Game Logic Functions ---
+            const initializeNewGame = (artifactsToUse) => {
+                const newPieces = [];
+
+                artifactsToUse.forEach(artifact => {
+                    for (let y = 0; y < artifact.rows; y++) {
+                        for (let x = 0; x < artifact.cols; x++) {
+                            // Randomly assign piece to a bin from the available artifacts
+                            // Check if we have bins to assign to (avoid error if 0 artifacts)
+                            if (artifactsToUse.length === 0) break;
+                            
+                            let randomBin = artifactsToUse[Math.floor(Math.random() * artifactsToUse.length)].id;
+                            
+                            newPieces.push({
+                                id: `${artifact.id}_${x}_${y}`,
+                                trueArtifactId: artifact.id,
+                                currentArtifactId: randomBin,
+                                gridX: x,
+                                gridY: y,
+                                totalCols: artifact.cols, 
+                                totalRows: artifact.rows,
+                                width: artifact.pieceWidth,   
+                                height: artifact.pieceHeight,
+                                x: 50 + Math.random() * 200,
+                                y: 50 + Math.random() * 200,
+                                rotation: Math.floor(Math.random() * 4) * 90,
+                                isOnCanvas: false,
+                                clipPath: generateRaggedPoly(),
+                                imgSrc: artifact.src
+                            });
+                        }
+                    }
+                });
+                
+                setPieces(prev => {
+                    const existingIds = new Set(prev.map(p => p.id));
+                    const filteredNew = newPieces.filter(p => !existingIds.has(p.id));
+                    return [...prev, ...filteredNew];
+                });
+                
+                if (pieces.length === 0) {
+                    setPieces(newPieces);
+                    setCompletedArtifacts([]);
+                }
+                
+                localStorage.removeItem('kh_puzzle_pieces_v5'); 
+            };
+
+            // Initialize Puzzle Pieces (Run Once)
+            useEffect(() => {
+                // CHANGED: Version v6 to clear old defaults from cache
+                const savedPieces = localStorage.getItem('kh_puzzle_pieces_v6');
+                const savedCompleted = localStorage.getItem('kh_completed_artifacts_v6');
+
+                if (savedCompleted) {
+                    setCompletedArtifacts(JSON.parse(savedCompleted));
+                }
+
+                if (savedPieces) {
+                    setPieces(JSON.parse(savedPieces));
+                } else {
+                    initializeNewGame(allArtifacts);
+                }
+            }, []);
+
+            // Save state on change
+            useEffect(() => {
+                if (pieces.length > 0) {
+                    localStorage.setItem('kh_puzzle_pieces_v6', JSON.stringify(pieces));
+                }
+                localStorage.setItem('kh_completed_artifacts_v6', JSON.stringify(completedArtifacts));
+            }, [pieces, completedArtifacts]);
+
+
+            // --- Zoom Control ---
+            const handleZoom = (delta) => {
+                setZoom(prev => Math.min(Math.max(prev + delta, 0.5), 2.0));
+            };
+
+            // --- HTML5 DnD (Bin to Canvas & Sorting) ---
+            const handlePanelDragStart = (e, piece) => {
+                setDraggedPanelPiece(piece);
+                e.target.style.opacity = '0.5';
+            };
+            const handlePanelDragEnd = (e) => {
+                e.target.style.opacity = '1';
+                setDraggedPanelPiece(null);
+            }
+
+            const handlePanelDrop = (e, targetArtifactId) => {
+                e.preventDefault();
+                if (draggedPanelPiece) {
+                   updatePiece(draggedPanelPiece.id, {
+                       isOnCanvas: false,
+                       currentArtifactId: targetArtifactId
+                   });
+                   setDraggedPanelPiece(null);
+                }
+            };
+
+            const handleCanvasDrop = (e) => {
+                e.preventDefault();
+                if (!draggedPanelPiece) return;
+
+                const canvasRect = canvasRef.current.getBoundingClientRect();
+                const newX = (e.clientX - canvasRect.left - viewOffset.x) / zoom - (draggedPanelPiece.width / 2);
+                const newY = (e.clientY - canvasRect.top - viewOffset.y) / zoom - (draggedPanelPiece.height / 2);
+
+                updatePiece(draggedPanelPiece.id, {
+                    isOnCanvas: true,
+                    currentArtifactId: selectedArtifactId,
+                    x: newX,
+                    y: newY
+                });
+                setDraggedPanelPiece(null);
+            };
+
+            // --- Canvas Interaction (Move Pieces OR Pan Camera) ---
+
+            const getConnectedGroup = (startId, currentPieces) => {
+                const group = new Set([startId]);
+                const queue = [startId];
+                const pieceMap = new Map(currentPieces.map(p => [p.id, p]));
+
+                while (queue.length > 0) {
+                    const currentId = queue.shift();
+                    const p1 = pieceMap.get(currentId);
+                    if (!p1) continue;
+
+                    currentPieces.forEach(p2 => {
+                        if (group.has(p2.id)) return;
+                        if (p2.currentArtifactId !== p1.currentArtifactId || !p2.isOnCanvas) return;
+                        // CHANGED: Use modulo to compare rotation (handle 0 vs 360 vs 720)
+                        if ((p2.rotation % 360) !== (p1.rotation % 360)) return;
+
+                        let rotRad = (p1.rotation * Math.PI) / 180;
+                        let dx = (p2.gridX - p1.gridX) * p1.width;
+                        let dy = (p2.gridY - p1.gridY) * p1.height;
+                        
+                        let rdx = Math.round(dx * Math.cos(rotRad) - dy * Math.sin(rotRad));
+                        let rdy = Math.round(dx * Math.sin(rotRad) + dy * Math.cos(rotRad));
+
+                        const actualX = p2.x - p1.x;
+                        const actualY = p2.y - p1.y;
+
+                        if (Math.abs(actualX - rdx) < 5 && Math.abs(actualY - rdy) < 5) {
+                            group.add(p2.id);
+                            queue.push(p2.id);
+                        }
+                    });
+                }
+                return Array.from(group);
+            };
+
+            const handleMouseDown = (e, piece) => {
+                e.stopPropagation();
+                e.preventDefault(); 
+
+                const groupIds = getConnectedGroup(piece.id, pieces);
+                const initialPositions = {};
+                groupIds.forEach(id => {
+                    const p = pieces.find(x => x.id === id);
+                    if (p) initialPositions[id] = { x: p.x, y: p.y };
+                });
+
+                setInteractionState({
+                    type: 'DRAG_PIECE',
+                    startMouse: { x: e.clientX, y: e.clientY },
+                    initialPositions: initialPositions,
+                    groupIds: groupIds
+                });
+            };
+
+            const handleCanvasMouseDown = (e) => {
+                e.preventDefault();
+                setInteractionState({
+                    type: 'PAN_CANVAS',
+                    startMouse: { x: e.clientX, y: e.clientY },
+                    initialViewOffset: { ...viewOffset },
+                    initialPositions: {}, groupIds: []
+                });
+            };
+
+            useEffect(() => {
+                const handleMouseMove = (e) => {
+                    if (interactionState.type === 'IDLE') return;
+
+                    if (interactionState.type === 'DRAG_PIECE') {
+                        const dx = (e.clientX - interactionState.startMouse.x) / zoom;
+                        const dy = (e.clientY - interactionState.startMouse.y) / zoom;
+
+                        setPieces(prev => prev.map(p => {
+                            if (interactionState.groupIds.includes(p.id)) {
+                                const init = interactionState.initialPositions[p.id];
+                                return { ...p, x: init.x + dx, y: init.y + dy };
+                            }
+                            return p;
+                        }));
+                    } else if (interactionState.type === 'PAN_CANVAS') {
+                        const dx = e.clientX - interactionState.startMouse.x;
+                        const dy = e.clientY - interactionState.startMouse.y;
+                        setViewOffset({
+                            x: interactionState.initialViewOffset.x + dx,
+                            y: interactionState.initialViewOffset.y + dy
+                        });
+                    }
+                };
+
+                const handleMouseUp = (e) => {
+                    if (interactionState.type === 'DRAG_PIECE') {
+                        const elements = document.elementsFromPoint(e.clientX, e.clientY);
+                        const dropTarget = elements.find(el => el.dataset.artifactId);
+                        
+                        if (dropTarget) {
+                            const targetId = dropTarget.dataset.artifactId;
+                            setPieces(prev => prev.map(p => {
+                                if (interactionState.groupIds.includes(p.id)) {
+                                    return { ...p, isOnCanvas: false, currentArtifactId: targetId };
+                                }
+                                return p;
+                            }));
+                        } else {
+                            const leaderId = interactionState.groupIds[0];
+                            // Pass current pieces to calculate snap correctly from new position
+                            
+                            const dx = (e.clientX - interactionState.startMouse.x) / zoom;
+                            const dy = (e.clientY - interactionState.startMouse.y) / zoom;
+                            
+                            const currentPositions = pieces.map(p => {
+                                if (interactionState.groupIds.includes(p.id)) {
+                                    const init = interactionState.initialPositions[p.id];
+                                    return { ...p, x: init.x + dx, y: init.y + dy };
+                                }
+                                return p;
+                            });
+                            
+                            snapGroup(leaderId, interactionState.groupIds, currentPositions);
+                        }
+                    }
+                    setInteractionState({ type: 'IDLE', startMouse: {x:0,y:0}, initialPositions: {}, groupIds: [] });
+                };
+
+                if (interactionState.type !== 'IDLE') {
+                    window.addEventListener('mousemove', handleMouseMove);
+                    window.addEventListener('mouseup', handleMouseUp);
+                }
+                return () => {
+                    window.removeEventListener('mousemove', handleMouseMove);
+                    window.removeEventListener('mouseup', handleMouseUp);
+                };
+            }, [interactionState, zoom]);
+
+            const snapGroup = (leaderId, groupIds, currentPieces) => {
+                const leader = currentPieces.find(p => p.id === leaderId);
+                if (!leader) return;
+
+                let deltaX = 0;
+                let deltaY = 0;
+                let snapped = false;
+
+                const others = currentPieces.filter(p => !groupIds.includes(p.id) && p.isOnCanvas && p.currentArtifactId === selectedArtifactId);
+
+                for (let other of others) {
+                    // CHANGED: Use modulo to compare rotation
+                    if ((other.rotation % 360) !== (leader.rotation % 360)) continue;
+
+                    let rotRad = (leader.rotation * Math.PI) / 180;
+                    let dx = (leader.gridX - other.gridX) * leader.width;
+                    let dy = (leader.gridY - other.gridY) * leader.height;
+                    
+                    let rdx = Math.round(dx * Math.cos(rotRad) - dy * Math.sin(rotRad));
+                    let rdy = Math.round(dx * Math.sin(rotRad) + dy * Math.cos(rotRad));
+
+                    const targetX = other.x + rdx;
+                    const targetY = other.y + rdy;
+
+                    if (Math.abs(leader.x - targetX) < SNAP_THRESHOLD && 
+                        Math.abs(leader.y - targetY) < SNAP_THRESHOLD) {
+                        deltaX = targetX - leader.x;
+                        deltaY = targetY - leader.y;
+                        snapped = true;
+                        break; 
+                    }
+                }
+
+                if (snapped) {
+                    setPieces(prev => prev.map(p => {
+                        if (groupIds.includes(p.id)) {
+                            const cur = currentPieces.find(cp => cp.id === p.id);
+                            return { ...p, x: cur.x + deltaX, y: cur.y + deltaY };
+                        }
+                        return p;
+                    }));
+                }
+            };
+
+            const handleRotate = (e, pieceId) => {
+                e.stopPropagation();
+                const piece = pieces.find(p => p.id === pieceId);
+                // CHANGED: Removed modulo (%) to allow continuous clockwise rotation
+                updatePiece(pieceId, { rotation: piece.rotation + 90 });
+            };
+
+            const updatePiece = (id, updates) => {
+                setPieces(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+            };
+
+            const markComplete = () => {
+                if (selectedArtifactId && !completedArtifacts.includes(selectedArtifactId)) {
+                    setCompletedArtifacts(prev => [...prev, selectedArtifactId]);
+                }
+            };
+
+            const resetData = () => {
+                if (confirm("Reset all puzzle progress? This cannot be undone.")) {
+                    localStorage.removeItem('kh_puzzle_pieces_v6');
+                    localStorage.removeItem('kh_completed_artifacts_v6');
+                    window.location.reload();
+                }
+            };
+
+            if (!isRegistered) {
+                return (
+                    <div className="max-w-2xl mx-auto text-center py-20 animate-fade-in">
+                        <Icons.Lock size={64} className="mx-auto text-[#8B0000] mb-6" />
+                        <h2 className="font-deco text-4xl text-[#8B0000] mb-4">RESTRICTED ACCESS</h2>
+                        <p className="font-serif text-lg mb-8">
+                            Only registered archivists may access the Restoration Lab.
+                        </p>
+                    </div>
+                );
+            }
+
+            const workspacePieces = pieces.filter(p => p.currentArtifactId === selectedArtifactId && p.isOnCanvas);
+            const panelPieces = pieces.filter(p => p.currentArtifactId === selectedArtifactId && !p.isOnCanvas);
+
+            const currentArtifact = allArtifacts.find(a => a.id === selectedArtifactId);
+
+            return (
+                <div className="flex flex-col h-[calc(100vh-140px)] animate-fade-in overflow-hidden">
+                    <div className="text-center mb-4 flex-shrink-0">
+                        <h2 className="font-deco text-3xl text-[#D4AF37] uppercase tracking-widest">Restoration Lab</h2>
+                        <p className="font-serif text-xs italic text-[#F5F5DC] opacity-70">Sort fragments into the correct files. Assemble on canvas.</p>
+                    </div>
+
+                    <div className="flex flex-grow gap-4 px-4 pb-4 overflow-hidden relative">
+                        
+                        {/* --- LEFT PANEL: ARTIFACT LIST --- */}
+                        <div className="w-1/5 min-w-[240px] flex flex-col gap-4 overflow-y-auto pr-4 custom-scrollbar">
+                            <div className="flex justify-between items-end border-b border-[#D4AF37] mb-2 pb-1">
+                                <h3 className="font-deco text-[#D4AF37] text-xs uppercase">CASE FILES</h3>
+                            </div>
+                            
+                            {/* Empty State Message */}
+                            {allArtifacts.length === 0 && (
+                                <div className="border-2 border-dashed border-[#D4AF37] p-4 text-center opacity-60">
+                                    <p className="text-[#D4AF37] font-mono text-xs mb-2">NO FILES LOADED</p>
+                                    <p className="text-[#F5F5DC] font-serif text-[0.6rem] italic">
+                                        Visit Admin console to import evidence images.
+                                    </p>
+                                </div>
+                            )}
+
+                            {allArtifacts.map(art => {
+                                const isComplete = completedArtifacts.includes(art.id);
+                                return (
+                                    <div 
+                                        key={art.id}
+                                        data-artifact-id={art.id} 
+                                        onClick={() => setSelectedArtifactId(art.id)}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        onDrop={(e) => handlePanelDrop(e, art.id)}
+                                        className={`p-4 border-2 transition-all cursor-pointer relative group rounded-sm
+                                            ${selectedArtifactId === art.id 
+                                            ? 'border-[#D4AF37] bg-[#1a1f2b]' 
+                                            : 'border-[#1a1f2b] bg-[#0a0d11] hover:border-[#8a7020]'}`}
+                                    >
+                                        <h4 className="font-deco text-sm text-[#D4AF37] mb-1 truncate">{art.title}</h4>
+                                        <div className="text-[0.6rem] font-mono opacity-50 text-[#F5F5DC] mb-2">
+                                            {isComplete ? <span className="text-green-500 font-bold">RESTORED</span> : "DAMAGED"}
+                                        </div>
+                                        
+                                        {/* BIG FOLDER UI */}
+                                        <div className="relative w-full flex justify-center">
+                                            <div style={{ color: art.folderColor }} className="w-48 h-40 relative transition-transform hover:scale-105">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-full h-full drop-shadow-2xl">
+                                                    <path d="M19.5 21a3 3 0 0 0 3-3v-4.5a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3V18a3 3 0 0 0 3 3h15ZM1.5 10.146V6a3 3 0 0 1 3-3h5.379a2.25 2.25 0 0 1 1.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 0 1 3 3v1.146A4.483 4.483 0 0 0 19.5 9h-15a4.483 4.483 0 0 0-3 1.146Z" />
+                                                </svg>
+                                                
+                                                {/* CONTENT OVERLAY (Percentage based for scaling) */}
+                                                <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: '15%', paddingLeft: '5%' }}>
+                                                    {isComplete ? (
+                                                        <div className="w-[80%] h-[60%] bg-black/40 overflow-hidden rounded-sm shadow-inner border border-white/20 rotate-2">
+                                                            <img src={art.src} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="border-2 border-red-900/50 text-red-900 bg-red-100/80 opacity-70 text-[0.6rem] px-2 py-1 font-bold -rotate-12 uppercase tracking-widest shadow-sm">
+                                                            Classified
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* --- MIDDLE: CANVAS --- */}
+                        <div className="flex-grow flex flex-col relative">
+                            {selectedArtifactId ? (
+                                <>
+                                    {/* Canvas Container */}
+                                    <div className="relative flex-grow bg-[#151a24] border-[3px] double border-[#D4AF37] overflow-hidden shadow-inner">
+                                        {/* Zoom Controls */}
+                                        <div className="absolute top-4 right-4 flex gap-2 z-50 bg-[#0F1319] border border-[#D4AF37] p-1 rounded shadow-xl">
+                                            <button onClick={() => handleZoom(-0.25)} className="p-1 hover:text-[#D4AF37]"><Icons.ZoomOut size={20}/></button>
+                                            <button onClick={() => {setZoom(1); setViewOffset({x:0,y:0})}} className="text-xs font-mono px-2 hover:text-[#D4AF37] border-l border-r border-[#D4AF37] opacity-70">{Math.round(zoom*100)}%</button>
+                                            <button onClick={() => handleZoom(0.25)} className="p-1 hover:text-[#D4AF37]"><Icons.ZoomIn size={20}/></button>
+                                        </div>
+
+                                        {/* Canvas Area (Draggable Background) */}
+                                        <div 
+                                            ref={canvasRef}
+                                            onMouseDown={handleCanvasMouseDown}
+                                            onDragOver={(e) => e.preventDefault()}
+                                            onDrop={handleCanvasDrop}
+                                            className={`w-full h-full ${interactionState.type === 'PAN_CANVAS' ? 'cursor-grabbing' : 'cursor-grab'}`}
+                                            style={{ 
+                                                backgroundPosition: `${viewOffset.x}px ${viewOffset.y}px`,
+                                                backgroundImage: 'radial-gradient(#1a1f2b 20%, transparent 20%)',
+                                                backgroundSize: `${20 * zoom}px ${20 * zoom}px` 
+                                            }}
+                                        >
+                                            <div className="absolute top-2 left-2 text-[#D4AF37] opacity-20 font-deco text-4xl pointer-events-none select-none">
+                                                WORKSPACE: {currentArtifact ? currentArtifact.title : 'Unknown Artifact'}
+                                            </div>
+
+                                            {/* Scalable Layer with View Offset */}
+                                            <div style={{ 
+                                                transform: `translate(${viewOffset.x}px, ${viewOffset.y}px) scale(${zoom})`, 
+                                                transformOrigin: 'top left',
+                                                width: '100%', 
+                                                height: '100%' 
+                                            }}>
+                                                {workspacePieces.map(piece => (
+                                                    <div
+                                                        key={piece.id}
+                                                        onMouseDown={(e) => handleMouseDown(e, piece)}
+                                                        onDoubleClick={(e) => handleRotate(e, piece.id)}
+                                                        className={`absolute cursor-grab active:cursor-grabbing hover:z-50 hover:brightness-110
+                                                            ${interactionState.groupIds.includes(piece.id) ? 'z-50 shadow-2xl' : 'z-10 shadow-md transition-transform duration-200'}`}
+                                                        style={{
+                                                            left: piece.x,
+                                                            top: piece.y,
+                                                            width: `${piece.width}px`,
+                                                            height: `${piece.height}px`,
+                                                            transform: `rotate(${piece.rotation}deg)`,
+                                                        }}
+                                                    >
+                                                        <div 
+                                                            style={{
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                backgroundColor: '#4a4036', 
+                                                                backgroundImage: `url('${piece.imgSrc}')`,
+                                                                backgroundSize: `${piece.totalCols * 100}% ${piece.totalRows * 100}%`,
+                                                                backgroundPosition: `${(piece.gridX / (piece.totalCols - 1)) * 100}% ${(piece.gridY / (piece.totalRows - 1)) * 100}%`,
+                                                                clipPath: piece.clipPath,
+                                                                filter: 'sepia(30%) contrast(110%) drop-shadow(2px 4px 6px black)',
+                                                                pointerEvents: 'none' 
+                                                            }}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Bar */}
+                                    <div className="h-12 flex items-center justify-between gap-4 pt-2">
+                                        <button onClick={resetData} className="text-[#8B0000] text-xs font-mono hover:underline opacity-60">
+                                            [RESET DATA]
+                                        </button>
+                                        <div className="flex gap-4 items-center">
+                                            <p className="text-xs font-mono text-[#F5F5DC] opacity-60">
+                                                Drag background to pan. Scroll to zoom.
+                                            </p>
+                                            <button 
+                                                onClick={markComplete}
+                                                className="bg-[#D4AF37] text-black font-deco px-4 py-2 hover:bg-[#fff] transition-colors text-sm"
+                                            >
+                                                ARTIFACT COMPLETE
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex-grow flex flex-col items-center justify-center border-2 border-dashed border-[#D4AF37] opacity-50 bg-[#1a1f2b] bg-opacity-50">
+                                    <Icons.BookOpen size={48} className="text-[#D4AF37] mb-4" />
+                                    <p className="font-deco text-xl text-[#D4AF37] mb-2">RESTORE ARCHIVES</p>
+                                    <p className="font-mono text-sm text-[#F5F5DC] max-w-md text-center">
+                                        &larr; Select a Case File from the list on the left to begin sorting and assembling fragments.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* --- RIGHT PANEL: FRAGMENTS (1/4 width) --- */}
+                        <div className="w-1/4 min-w-[200px] flex flex-col">
+                            <div className="bg-[#1a1f2b] border border-[#D4AF37] p-2 text-center font-bold text-[#D4AF37] text-xs uppercase tracking-widest">
+                                Unsorted Fragments
+                            </div>
+                            <div className="flex-grow bg-[#0a0d11] border-l border-r border-b border-[#D4AF37] overflow-y-auto p-4 custom-scrollbar">
+                                {selectedArtifactId ? (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {panelPieces.map(piece => (
+                                            <div
+                                                key={piece.id}
+                                                draggable
+                                                onDragStart={(e) => handlePanelDragStart(e, piece)}
+                                                onDragEnd={handlePanelDragEnd}
+                                                className="relative cursor-grab active:cursor-grabbing hover:scale-110 transition-transform"
+                                                style={{
+                                                    // Use dynamic scale for preview
+                                                    width: `${piece.width * 0.8}px`,
+                                                    height: `${piece.height * 0.8}px`
+                                                }}
+                                            >
+                                                {/* Fallback color added here too */}
+                                                <div 
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        backgroundColor: '#4a4036', 
+                                                        backgroundImage: `url('${piece.imgSrc}')`,
+                                                        backgroundSize: `${piece.totalCols * 100}% ${piece.totalRows * 100}%`,
+                                                        backgroundPosition: `${(piece.gridX / (piece.totalCols - 1)) * 100}% ${(piece.gridY / (piece.totalRows - 1)) * 100}%`,
+                                                        clipPath: piece.clipPath,
+                                                        transform: `rotate(${piece.rotation}deg)`,
+                                                        filter: 'sepia(20%) drop-shadow(0px 2px 4px rgba(0,0,0,0.8))'
+                                                    }}
+                                                />
+                                            </div>
+                                        ))}
+                                        {panelPieces.length === 0 && (
+                                            <div className="col-span-2 text-center text-xs opacity-40 py-10">
+                                                <p className="mb-2">No fragments found in this bin.</p>
+                                                <p className="text-[0.6rem]">Check other Case Files to find missing pieces.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-center opacity-30">
+                                        <Icons.Lock size={24} className="mb-2" />
+                                        <p className="text-xs">System Standby...</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App Component ---
+        const App = () => {
+            const [view, setView] = useState('home');
+            const [isRegistered, setIsRegistered] = useState(false);
+            const [customArtifacts, setCustomArtifacts] = useState([]); // Lifted state for persistence
+            const [timelineEvents, setTimelineEvents] = useState(INITIAL_TIMELINE_EVENTS); // Lifted state for Timeline
+            const [members, setMembers] = useState(INITIAL_MEMBERS); // Member State
+            const [comicsData, setComicsData] = useState(INITIAL_COMICS); // Comics State
+
+            const NavItem = ({ id, label, icon: Icon }) => (
+                <button 
+                    onClick={() => setView(id)}
+                    className={`flex items-center gap-2 px-4 py-2 uppercase font-deco tracking-widest transition-all
+                    ${view === id 
+                        ? 'text-[#D4AF37] border-b-2 border-[#D4AF37]' 
+                        : 'text-[#F5F5DC] opacity-60 hover:opacity-100 hover:text-[#D4AF37]'}`}
+                >
+                    <Icon size={18} />
+                    <span className="hidden md:inline">{label}</span>
+                </button>
+            );
+
+            // Helper to add event from Admin
+            const addTimelineEvent = (newEvent) => {
+                setTimelineEvents(prev => [...prev, newEvent]);
+            };
+
+            const addMember = (newMember) => {
+                setMembers(prev => [...prev, newMember]);
+            };
+
+             const addComicEntry = (newComic) => {
+                setComicsData(prev => [...prev, newComic]);
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    {/* Header */}
+                    <header className="border-b-4 double border-[#D4AF37] bg-[#0F1319] bg-opacity-95 sticky top-0 z-50 shadow-2xl">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="flex flex-col md:flex-row justify-between items-center py-4">
+                                <div className="flex items-center gap-3 mb-4 md:mb-0 cursor-pointer" onClick={() => setView('home')}>
+                                    <div className="w-10 h-10 bg-[#D4AF37] rotate-45 flex items-center justify-center border-2 border-white">
+                                        <span className="text-black font-bold -rotate-45 text-xl">K</span>
+                                    </div>
+                                    <div>
+                                        <h1 className="font-deco text-2xl tracking-widest text-[#F5F5DC]">KNIGHT HAWKS</h1>
+                                        <p className="text-[0.6rem] uppercase tracking-[0.3em] text-[#D4AF37]">Official Archives</p>
+                                    </div>
+                                </div>
+                                <nav className="flex flex-wrap justify-center gap-2">
+                                    <NavItem id="home" label="Discovery" icon={Icons.BookOpen} />
+                                    <NavItem id="comics" label="Comics & Serials" icon={Icons.Film} />
+                                    <NavItem id="articles" label="Memoirs" icon={Icons.Feather} />
+                                    <NavItem id="timeline" label="Timeline" icon={Icons.Clock} />
+                                    <NavItem id="members" label="Members" icon={Icons.Users} />
+                                    <NavItem id="join" label="Enlist" icon={Icons.Mail} />
+                                    <NavItem id="decoder" label="Decoder" icon={Icons.Radio} />
+                                    <NavItem id="restoration" label="Restoration" icon={Icons.Puzzle} />
+                                </nav>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="flex-grow p-6 relative">
+                         {/* Background Art Elements */}
+                        <div className="fixed top-20 left-10 w-px h-full bg-[#D4AF37] opacity-10 pointer-events-none"></div>
+                        <div className="fixed top-20 right-10 w-px h-full bg-[#D4AF37] opacity-10 pointer-events-none"></div>
+
+                        {view === 'home' && <HomeView />}
+                        {view === 'comics' && <ComicsAndSerialsView comics={comicsData} />}
+                        {view === 'articles' && <ArticlesView />}
+                        {view === 'timeline' && <TimelineView events={timelineEvents} />}
+                        {view === 'members' && <MembersView members={members} />}
+                        {view === 'join' && <JoinView onRegister={() => { setIsRegistered(true); }} />}
+                        {view === 'decoder' && <DecoderView isRegistered={isRegistered} />}
+                        {view === 'restoration' && <RestorationView isRegistered={isRegistered} customArtifacts={customArtifacts} setCustomArtifacts={setCustomArtifacts} />}
+                        {view === 'admin' && <AdminView addTimelineEvent={addTimelineEvent} addMember={addMember} customArtifacts={customArtifacts} setCustomArtifacts={setCustomArtifacts} addComicEntry={addComicEntry} />}
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="border-t border-[#D4AF37] bg-[#0a0d11] py-8 mt-12">
+                        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center opacity-60 text-sm font-serif">
+                            <p>© 2025 Knight Hawks Archives. All rights reserved.</p>
+                            <div className="flex gap-6 mt-4 md:mt-0">
+                                <button onClick={() => setView('admin')} className="hover:text-[#D4AF37] uppercase tracking-wider">Admin Access</button>
+                                <a href="#" className="hover:text-[#D4AF37]">Privacy Policy</a>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
