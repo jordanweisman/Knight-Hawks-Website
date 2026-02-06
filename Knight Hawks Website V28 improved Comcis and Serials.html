@@ -1219,15 +1219,12 @@
         };
 
         const AdminView = ({ addTimelineEvent, addMember, customArtifacts, setCustomArtifacts, addComicEntry }) => {
-            const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [password, setPassword] = useState("");
-            const [error, setError] = useState(false);
             
             // Timeline Form State
             const [eventYear, setEventYear] = useState("");
             const [eventTitle, setEventTitle] = useState("");
             const [eventDesc, setEventDesc] = useState("");
-            
             // Member Form State
             const [memberName, setMemberName] = useState("");
             const [memberBio, setMemberBio] = useState("");
@@ -1330,13 +1327,7 @@
 
 
             const handleLogin = (e) => {
-                e.preventDefault();
-                if (password === "Clayton") {
-                    setIsAuthenticated(true);
-                    setError(false);
-                } else {
-                    setError(true);
-                }
+                // This is kept for backward compatibility but shouldn't be called anymore
             };
             
             const handleAddEvent = (e) => {
@@ -1449,34 +1440,6 @@
                 });
             };
 
-            if (!isAuthenticated) {
-                return (
-                    <div className="max-w-md mx-auto py-20 animate-fade-in">
-                        <DecoBox>
-                            <div className="text-center mb-6">
-                                <Icons.Shield size={48} className="mx-auto text-[#8B0000] mb-4" />
-                                <h2 className="font-deco text-2xl text-[#8B0000]">ADMINISTRATIVE ACCESS</h2>
-                                <p className="font-serif text-sm opacity-70 mt-2">Classified Clearance Level 5 Only</p>
-                            </div>
-                            <form onSubmit={handleLogin} className="space-y-4">
-                                <div>
-                                    <input 
-                                        type="password" 
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="ENTER PASSPHRASE" 
-                                        className="w-full bg-[#0F1319] border border-[#D4AF37] p-3 text-center text-[#F5F5DC] focus:outline-none focus:ring-1 focus:ring-[#D4AF37] font-deco tracking-widest"
-                                    />
-                                </div>
-                                <button type="submit" className="w-full bg-[#D4AF37] text-black font-deco text-lg py-3 hover:bg-[#F5F5DC] transition-colors">
-                                    VERIFY IDENTITY
-                                </button>
-                                {error && <p className="text-center text-[#8B0000] font-bold text-sm blink">ACCESS DENIED: INVALID CREDENTIALS</p>}
-                            </form>
-                        </DecoBox>
-                    </div>
-                );
-            }
 
             return (
                 <div className="animate-fade-in max-w-7xl mx-auto flex flex-col items-center space-y-16 pb-20">
@@ -2394,13 +2357,26 @@
         // --- Main App Component ---
         const App = () => {
             const [view, setView] = useState('home');
-            const [adminTab, setAdminTab] = useState('content'); // 'content' or 'users'
+            const [adminTab, setAdminTab] = useState('users'); // 'users' or 'content'
+            const [adminAuth, setAdminAuth] = useState(false);
+            const [adminPassword, setAdminPassword] = useState("");
+            const [adminError, setAdminError] = useState(false);
             const [isRegistered, setIsRegistered] = useState(false);
             const [customArtifacts, setCustomArtifacts] = useState([]); // Lifted state for persistence
             const [timelineEvents, setTimelineEvents] = useState(INITIAL_TIMELINE_EVENTS); // Lifted state for Timeline
             const [members, setMembers] = useState(INITIAL_MEMBERS); // Member State
             const [comicsData, setComicsData] = useState(INITIAL_COMICS); // Comics State
             const [loading, setLoading] = useState(true);
+
+            const handleAdminLogin = (e) => {
+                e.preventDefault();
+                if (adminPassword === "Clayton") {
+                    setAdminAuth(true);
+                    setAdminError(false);
+                } else {
+                    setAdminError(true);
+                }
+            };
 
             // Load data from backend API on mount
             useEffect(() => {
@@ -2540,34 +2516,61 @@
                         {view === 'decoder' && <DecoderView isRegistered={isRegistered} />}
                         {view === 'restoration' && <RestorationView isRegistered={isRegistered} customArtifacts={customArtifacts} setCustomArtifacts={setCustomArtifacts} />}
                         {view === 'admin' && (
-                            <div className="w-full">
-                                <div className="flex justify-center gap-6 mb-8 pb-6 border-b-2 border-[#D4AF37]">
-                                    <button 
-                                        onClick={() => setAdminTab('users')}
-                                        className={`px-8 py-3 font-deco uppercase tracking-widest text-lg transition-all ${
-                                            adminTab === 'users' 
-                                                ? 'text-[#D4AF37] border-b-4 border-[#D4AF37]' 
-                                                : 'text-[#F5F5DC] opacity-60 hover:opacity-100 hover:text-[#D4AF37]'
-                                        }`}
-                                    >
-                                        👥 Enlisted Personnel
-                                    </button>
-                                    <button 
-                                        onClick={() => setAdminTab('content')}
-                                        className={`px-8 py-3 font-deco uppercase tracking-widest text-lg transition-all ${
-                                            adminTab === 'content' 
-                                                ? 'text-[#D4AF37] border-b-4 border-[#D4AF37]' 
-                                                : 'text-[#F5F5DC] opacity-60 hover:opacity-100 hover:text-[#D4AF37]'
-                                        }`}
-                                    >
-                                        📋 Content Manager
-                                    </button>
+                            !adminAuth ? (
+                                <div className="max-w-md mx-auto py-20 animate-fade-in">
+                                    <DecoBox>
+                                        <div className="text-center mb-6">
+                                            <Icons.Shield size={48} className="mx-auto text-[#8B0000] mb-4" />
+                                            <h2 className="font-deco text-2xl text-[#8B0000]">ADMINISTRATIVE ACCESS</h2>
+                                            <p className="font-serif text-sm opacity-70 mt-2">Classified Clearance Level 5 Only</p>
+                                        </div>
+                                        <form onSubmit={handleAdminLogin} className="space-y-4">
+                                            <div>
+                                                <input 
+                                                    type="password" 
+                                                    value={adminPassword}
+                                                    onChange={(e) => setAdminPassword(e.target.value)}
+                                                    placeholder="ENTER PASSPHRASE" 
+                                                    className="w-full bg-[#0F1319] border border-[#D4AF37] p-3 text-center text-[#F5F5DC] focus:outline-none focus:ring-1 focus:ring-[#D4AF37] font-deco tracking-widest"
+                                                />
+                                            </div>
+                                            <button type="submit" className="w-full bg-[#D4AF37] text-black font-deco text-lg py-3 hover:bg-[#F5F5DC] transition-colors">
+                                                VERIFY IDENTITY
+                                            </button>
+                                            {adminError && <p className="text-center text-[#8B0000] font-bold text-sm blink">ACCESS DENIED: INVALID CREDENTIALS</p>}
+                                        </form>
+                                    </DecoBox>
                                 </div>
-                                <div className="mt-6">
-                                    {adminTab === 'users' && <UsersAdminView />}
-                                    {adminTab === 'content' && <AdminView addTimelineEvent={addTimelineEvent} addMember={addMember} customArtifacts={customArtifacts} setCustomArtifacts={setCustomArtifacts} addComicEntry={addComicEntry} />}
+                            ) : (
+                                <div className="w-full">
+                                    <div className="flex justify-center gap-6 mb-8 pb-6 border-b-2 border-[#D4AF37]">
+                                        <button 
+                                            onClick={() => setAdminTab('users')}
+                                            className={`px-8 py-3 font-deco uppercase tracking-widest text-lg transition-all ${
+                                                adminTab === 'users' 
+                                                    ? 'text-[#D4AF37] border-b-4 border-[#D4AF37]' 
+                                                    : 'text-[#F5F5DC] opacity-60 hover:opacity-100 hover:text-[#D4AF37]'
+                                            }`}
+                                        >
+                                            👥 Enlisted Personnel
+                                        </button>
+                                        <button 
+                                            onClick={() => setAdminTab('content')}
+                                            className={`px-8 py-3 font-deco uppercase tracking-widest text-lg transition-all ${
+                                                adminTab === 'content' 
+                                                    ? 'text-[#D4AF37] border-b-4 border-[#D4AF37]' 
+                                                    : 'text-[#F5F5DC] opacity-60 hover:opacity-100 hover:text-[#D4AF37]'
+                                            }`}
+                                        >
+                                            📋 Content Manager
+                                        </button>
+                                    </div>
+                                    <div className="mt-6">
+                                        {adminTab === 'users' && <UsersAdminView />}
+                                        {adminTab === 'content' && <AdminView addTimelineEvent={addTimelineEvent} addMember={addMember} customArtifacts={customArtifacts} setCustomArtifacts={setCustomArtifacts} addComicEntry={addComicEntry} />}
+                                    </div>
                                 </div>
-                            </div>
+                            )
                         )}
                     </main>
 
