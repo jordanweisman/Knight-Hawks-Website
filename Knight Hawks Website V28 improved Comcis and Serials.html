@@ -2261,6 +2261,39 @@
             const [timelineEvents, setTimelineEvents] = useState(INITIAL_TIMELINE_EVENTS); // Lifted state for Timeline
             const [members, setMembers] = useState(INITIAL_MEMBERS); // Member State
             const [comicsData, setComicsData] = useState(INITIAL_COMICS); // Comics State
+            const [loading, setLoading] = useState(true);
+
+            // Load data from backend API on mount
+            useEffect(() => {
+                const loadDataFromAPI = async () => {
+                    try {
+                        const [timelineRes, membersRes, comicsRes] = await Promise.all([
+                            fetch('/api/timeline'),
+                            fetch('/api/members'),
+                            fetch('/api/comics')
+                        ]);
+
+                        if (timelineRes.ok) {
+                            const timelineData = await timelineRes.json();
+                            setTimelineEvents(timelineData);
+                        }
+                        if (membersRes.ok) {
+                            const membersData = await membersRes.json();
+                            setMembers(membersData);
+                        }
+                        if (comicsRes.ok) {
+                            const comicsData = await comicsRes.json();
+                            setComicsData(comicsData);
+                        }
+                    } catch (error) {
+                        console.error('Error loading data from API:', error);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                loadDataFromAPI();
+            }, []);
 
             const NavItem = ({ id, label, icon: Icon }) => (
                 <button 
@@ -2275,17 +2308,53 @@
                 </button>
             );
 
-            // Helper to add event from Admin
-            const addTimelineEvent = (newEvent) => {
-                setTimelineEvents(prev => [...prev, newEvent]);
+            // Helper to add event from Admin (now POSTs to API)
+            const addTimelineEvent = async (newEvent) => {
+                try {
+                    const response = await fetch('/api/timeline', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newEvent)
+                    });
+                    if (response.ok) {
+                        const createdEvent = await response.json();
+                        setTimelineEvents(prev => [...prev, createdEvent]);
+                    }
+                } catch (error) {
+                    console.error('Error adding timeline event:', error);
+                }
             };
 
-            const addMember = (newMember) => {
-                setMembers(prev => [...prev, newMember]);
+            const addMember = async (newMember) => {
+                try {
+                    const response = await fetch('/api/members', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newMember)
+                    });
+                    if (response.ok) {
+                        const createdMember = await response.json();
+                        setMembers(prev => [...prev, createdMember]);
+                    }
+                } catch (error) {
+                    console.error('Error adding member:', error);
+                }
             };
 
-             const addComicEntry = (newComic) => {
-                setComicsData(prev => [...prev, newComic]);
+            const addComicEntry = async (newComic) => {
+                try {
+                    const response = await fetch('/api/comics', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newComic)
+                    });
+                    if (response.ok) {
+                        const createdComic = await response.json();
+                        setComicsData(prev => [...prev, createdComic]);
+                    }
+                } catch (error) {
+                    console.error('Error adding comic entry:', error);
+                }
             };
 
             return (

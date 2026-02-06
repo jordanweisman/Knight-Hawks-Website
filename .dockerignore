@@ -3,4 +3,3 @@
 .gitattributes
 node_modules
 *.log
-Dockerfile
