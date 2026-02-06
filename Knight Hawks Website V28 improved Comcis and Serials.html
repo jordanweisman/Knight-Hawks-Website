@@ -2540,31 +2540,33 @@
                         {view === 'decoder' && <DecoderView isRegistered={isRegistered} />}
                         {view === 'restoration' && <RestorationView isRegistered={isRegistered} customArtifacts={customArtifacts} setCustomArtifacts={setCustomArtifacts} />}
                         {view === 'admin' && (
-                            <div>
-                                <div className="flex justify-center gap-4 mb-8 border-b border-[#D4AF37] pb-4">
+                            <div className="w-full">
+                                <div className="flex justify-center gap-6 mb-8 pb-6 border-b-2 border-[#D4AF37]">
                                     <button 
                                         onClick={() => setAdminTab('users')}
-                                        className={`px-6 py-2 font-deco uppercase tracking-widest transition-all ${
+                                        className={`px-8 py-3 font-deco uppercase tracking-widest text-lg transition-all ${
                                             adminTab === 'users' 
-                                                ? 'text-[#D4AF37] border-b-2 border-[#D4AF37]' 
+                                                ? 'text-[#D4AF37] border-b-4 border-[#D4AF37]' 
                                                 : 'text-[#F5F5DC] opacity-60 hover:opacity-100 hover:text-[#D4AF37]'
                                         }`}
                                     >
-                                        Enlisted Personnel
+                                        👥 Enlisted Personnel
                                     </button>
                                     <button 
                                         onClick={() => setAdminTab('content')}
-                                        className={`px-6 py-2 font-deco uppercase tracking-widest transition-all ${
+                                        className={`px-8 py-3 font-deco uppercase tracking-widest text-lg transition-all ${
                                             adminTab === 'content' 
-                                                ? 'text-[#D4AF37] border-b-2 border-[#D4AF37]' 
+                                                ? 'text-[#D4AF37] border-b-4 border-[#D4AF37]' 
                                                 : 'text-[#F5F5DC] opacity-60 hover:opacity-100 hover:text-[#D4AF37]'
                                         }`}
                                     >
-                                        Content Manager
+                                        📋 Content Manager
                                     </button>
                                 </div>
-                                {adminTab === 'users' && <UsersAdminView />}
-                                {adminTab === 'content' && <AdminView addTimelineEvent={addTimelineEvent} addMember={addMember} customArtifacts={customArtifacts} setCustomArtifacts={setCustomArtifacts} addComicEntry={addComicEntry} />}
+                                <div className="mt-6">
+                                    {adminTab === 'users' && <UsersAdminView />}
+                                    {adminTab === 'content' && <AdminView addTimelineEvent={addTimelineEvent} addMember={addMember} customArtifacts={customArtifacts} setCustomArtifacts={setCustomArtifacts} addComicEntry={addComicEntry} />}
+                                </div>
                             </div>
                         )}
                     </main>
