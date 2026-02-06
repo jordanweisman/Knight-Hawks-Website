@@ -9,20 +9,10 @@ RUN mv "/tmp/site/Knight Hawks Website V28 improved Comcis and Serials.html" /us
 # Copy any other static assets into nginx's html directory
 RUN cp -r /tmp/site/* /usr/share/nginx/html/ || true
 
-# Create custom nginx config that listens on port 8000
-RUN cat > /etc/nginx/conf.d/default.conf <<EOF
-server {
-    listen 8000;
-    listen [::]:8000;
-    server_name _;
-
-    location / {
-        root /usr/share/nginx/html;
-        index index.html index.htm;
-    }
-}
-EOF
+# Replace the default nginx config with one that listens on port 8000
+RUN printf 'server {\n    listen 8000;\n    listen [::]:8000;\n    server_name _;\n    location / {\n        root /usr/share/nginx/html;\n        index index.html index.htm;\n    }\n}\n' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 8000
 
-CMD ["nginx", "-g", "daemon off;"]
+# Use a simple entrypoint that just starts nginx without the official entrypoint
+CMD ["/bin/sh", "-c", "nginx -g 'daemon off;'"]
