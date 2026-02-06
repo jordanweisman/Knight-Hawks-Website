@@ -9,6 +9,9 @@ RUN mv "/tmp/site/Knight Hawks Website V28 improved Comcis and Serials.html" /us
 # Copy any other static assets into nginx's html directory
 RUN cp -r /tmp/site/* /usr/share/nginx/html/ || true
 
-EXPOSE 80
+# Configure nginx to listen on port 8000 (Koyeb default)
+RUN sed -i 's/listen 80;/listen 8000;/g' /etc/nginx/conf.d/default.conf
+
+EXPOSE 8000
 
 CMD ["nginx", "-g", "daemon off;"]
