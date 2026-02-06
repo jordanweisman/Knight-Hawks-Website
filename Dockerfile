@@ -15,4 +15,4 @@ RUN printf 'server {\n    listen 8000;\n    listen [::]:8000;\n    server_name _
 EXPOSE 8000
 
 # Use a simple entrypoint that just starts nginx without the official entrypoint
-CMD ["/bin/sh", "-c", "nginx -g 'daemon off;'"]
+CMD nginx -g 'daemon off;'
